@@ -5,6 +5,12 @@
       "jour": 5,
       "debut": "16:00",
       "fin": "21:00"
+    },
+    {
+      "sens": "PR",
+      "jour": 0,
+      "debut": "16:00",
+      "fin": "21:00"
     }
   ],
   "modifie_par": "Daniel",
