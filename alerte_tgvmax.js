@@ -115,7 +115,9 @@ async function main() {
         `${t.heure_depart.slice(0, 5)} → ${t.heure_arrivee.slice(0, 5)} (n°${t.train_no})\n`;
     }
     if (alertes.length > 20) msg += `… et ${alertes.length - 20} autres\n`;
+        msg += '\n📊 Dashboard : https://guermeurdaniel-cpu.github.io/tgvmax-rennes/';
     msg += '\n👉 Réserver : https://www.sncf-connect.com/';
+
     await sendTelegram(msg);
     console.log(`Alerte envoyée : ${alertes.length} trains.`);
   } else {
