@@ -1,12 +1,6 @@
 {
   "regles": [
     {
-      "sens": "RP",
-      "jour": 5,
-      "debut": "16:00",
-      "fin": "21:00"
-    },
-    {
       "sens": "PR",
       "jour": 0,
       "debut": "16:00",
@@ -14,5 +8,5 @@
     }
   ],
   "modifie_par": "Daniel",
-  "modifie_le": "2026-07-19 11:52"
+  "modifie_le": "2026-07-19 11:59"
 }
