@@ -5,447 +5,381 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>TGV Max — Persistance par jour de semaine</title>
+<title>TGV Max Paris–Rennes</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--txt:#e6edf3;--muted:#8b949e;--acc:#2ea043;--acc2:#58a6ff;--warn:#d29922;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:12px;padding-bottom:40px;max-width:760px;margin:0 auto;}
-h1{font-size:1.15em;margin:6px 0 4px;display:flex;align-items:center;gap:8px;}
+h1{font-size:1.15em;margin:6px 0 12px;display:flex;align-items:center;gap:8px;}
 h1 small{color:var(--muted);font-weight:normal;font-size:0.65em;}
-.lead{color:var(--muted);font-size:0.78em;line-height:1.5;margin-bottom:12px;}
-.lead a{color:var(--acc2);}
-.lead b{color:var(--txt);}
-.tabs{display:flex;gap:6px;margin-bottom:8px;}
+.tabs{display:flex;gap:6px;margin-bottom:12px;}
 .tab{flex:1;padding:9px 6px;background:var(--card);border:1px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-size:0.9em;user-select:none;}
 .tab.active{border-color:var(--acc2);background:#0d2137;color:var(--acc2);font-weight:600;}
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.pill{padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:14px;font-size:0.78em;cursor:pointer;color:var(--muted);user-select:none;}
-.pill.on{border-color:var(--acc);color:var(--acc);background:#0d2117;}
-.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-canvas{display:block;touch-action:pan-y;}
+.daybtn{padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:14px;font-size:0.8em;cursor:pointer;color:var(--muted);user-select:none;}
+.daybtn.on{border-color:var(--acc);color:var(--acc);background:#0d2117;}
+.datecard{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.datehead{padding:8px 12px;font-weight:600;font-size:0.9em;background:#1c2129;display:flex;justify-content:space-between;}
+.datehead .n{color:var(--acc);font-weight:normal;font-size:0.9em;}
+.train{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--border);font-size:0.9em;}
+.train .hours{font-variant-numeric:tabular-nums;font-weight:600;min-width:110px;}
+.train .dur{color:var(--muted);font-size:0.85em;}
+.train .num{margin-left:auto;color:var(--muted);font-size:0.8em;}
+.train.matched{border-left:3px solid var(--acc);}
+.empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:0.9em;}
 #status{color:var(--muted);font-size:0.8em;margin-bottom:10px;}
-.hint{color:var(--muted);font-size:0.75em;line-height:1.55;margin-top:4px;}
-.hint b{color:var(--txt);}
-.tip{position:fixed;display:none;background:#000d;color:#fff;font-size:0.75em;padding:7px 10px;border-radius:8px;pointer-events:none;z-index:9;max-width:260px;line-height:1.5;border:1px solid var(--border);}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;}
+.panel h2{font-size:0.95em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.panel h2 .toggle{color:var(--acc2);font-size:0.85em;cursor:pointer;font-weight:normal;}
+.rule{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.rule select,.rule input[type=time]{background:#0d1117;color:var(--txt);border:1px solid var(--border);border-radius:6px;padding:5px 6px;font-size:0.85em;}
+.rule .del{color:#f85149;cursor:pointer;padding:4px 8px;font-size:1.05em;user-select:none;}
+.btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+button{background:var(--card);color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.85em;cursor:pointer;}
+button.primary{background:#1a7f37;border-color:#2ea043;color:#fff;}
+#cfgmsg{font-size:0.8em;margin-top:8px;color:var(--muted);}
+#tokrow{margin-top:10px;display:flex;gap:6px;}
+#tokrow input{flex:1;background:#0d1117;color:var(--txt);border:1px solid var(--border);border-radius:6px;padding:7px;font-size:0.8em;}
+.hidden{display:none;}
+.hint{color:var(--muted);font-size:0.75em;margin-top:6px;line-height:1.4;}
+.btnlink{display:inline-block;background:#1a7f37;border:1px solid #2ea043;color:#fff;border-radius:8px;padding:8px 14px;font-size:0.85em;text-decoration:none;}
 </style>
 </head>
 <body>
-<h1>📊 Persistance <small>par jour de semaine et par horaire</small></h1>
-<div class="lead">
-  Chaque case croise un <b>jour de la semaine</b> et un <b>horaire de départ</b>, et porte une
-  moyenne simple en jours, toutes occurrences comptant pareil.
-  <span id="metricNote"></span>
-  <a href="index.html">← retour au tableau</a>
+<h1>🚄 TGV Max <small>Paris ↔ Rennes · places MAX réservables</small></h1>
+
+<div class="panel">
+  <h2>🔔 Alertes Telegram <span class="toggle" id="cfgToggle">afficher</span></h2>
+  <div id="cfgBody" class="hidden">
+    <div id="rules"></div>
+    <div class="btnrow">
+      <button id="addRule">+ Ajouter une règle</button>
+      <button id="saveCfg" class="primary">💾 Enregistrer sur GitHub</button>
+    </div>
+    <div id="tokrow" class="hidden">
+      <input type="password" id="tokInput" placeholder="Token GitHub (fine-grained PAT)">
+      <button id="tokSave">OK</button>
+    </div>
+    <div id="cfgmsg"></div>
+    <div class="hint">Les règles définissent les créneaux surveillés : le robot envoie une alerte Telegram quand un nouveau train MAX apparaît dans un de ces créneaux. Le token est stocké uniquement dans ce navigateur.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>📊 Statistiques <span class="toggle" id="statToggle">afficher</span></h2>
+  <div id="statBody" class="hidden">
+    <div class="hint">Deux matrices croisant le jour de la semaine et l'horaire de départ, calculées sur l'historique accumulé : la durée pendant laquelle un train reste réservable, et le délai entre son ouverture à la réservation et sa date de circulation.</div>
+    <div class="btnrow">
+      <a class="btnlink" href="presence.html">Ouvrir les statistiques →</a>
+    </div>
+  </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-dir="PR">Paris → Rennes</div>
-  <div class="tab" data-dir="RP">Rennes → Paris</div>
+  <div class="tab active" id="tabPR">Paris → Rennes</div>
+  <div class="tab" id="tabRP">Rennes → Paris</div>
 </div>
-
-<div class="filters">
-  <div class="pill on" data-metric="duree">Durée dispo</div>
-  <div class="pill" data-metric="delai">Délai d'ouverture</div>
-</div>
-
-<div id="status">Chargement de historique.jsonl…</div>
-
-<div class="panel"><canvas id="grid"></canvas></div>
-
-<div class="hint">
-  <b>Durée dispo.</b> Nombre de relevés quotidiens pendant lesquels le train est apparu
-  comme réservable.
-  <br>
-  <b>Délai d'ouverture.</b> Écart entre la date de circulation et le jour où le train est
-  devenu réservable alors qu'il ne l'était pas la veille. Un train déjà réservable au
-  premier relevé de l'historique n'a pas de veille : il est exclu de ce calcul, d'où une
-  matrice plus creuse que celle des durées.
-</div>
-
-<div class="tip" id="tip"></div>
+<div class="filters" id="dayFilters"></div>
+<div id="status">Chargement…</div>
+<div id="list"></div>
 
 <script>
 (function () {
-  "use strict";
+  'use strict';
 
-  // colonnes : lundi -> dimanche (getUTCDay : 0 = dimanche)
-  var COLS = [1, 2, 3, 4, 5, 6, 0];
-  var NOMS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-  var COURT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-  var DAY = 86400000;
+  // ---------- Constantes ----------
+  var API = 'https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets/tgvmax/records';
+  var REPO_OWNER = 'guermeurdaniel-cpu';
+  var REPO_NAME = 'tgvmax-rennes';
+  var CFG_PATH = 'alerte_config.json';
+  var JOURS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  var JOURS_LONG = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
-  // classes de l'histogramme des delais (bornes incluses), en jours avant circulation
-  var BINS = [[0, 1], [2, 3], [4, 6], [7, 11], [12, 20], [21, 29]];
-  var BINS_LBL = ["0-1", "2-3", "4-6", "7-11", "12-20", "21+"];
+  // ---------- État ----------
+  var direction = 'PR'; // PR = Paris->Rennes, RP = Rennes->Paris
+  var dayFilter = new Set(); // vide = tous les jours
+  var trains = { PR: [], RP: [] };
+  var config = { regles: [], modifie_par: '', modifie_le: '' };
 
-  var dir = "PR";
-  var metric = "duree";
-  var DATA = null;
-  var tip = document.getElementById("tip");
-
+  // ---------- Utilitaires ----------
   function $(id) { return document.getElementById(id); }
-  function dayMs(iso) { return Date.parse(iso + "T00:00:00Z"); }
-  function dow(ms) { return new Date(ms).getUTCDay(); }
-  function isoOf(ms) { return new Date(ms).toISOString().slice(0, 10); }
-  function jjmm(ms) {
-    var d = new Date(ms);
-    return ("0" + d.getUTCDate()).slice(-2) + "/" + ("0" + (d.getUTCMonth() + 1)).slice(-2);
-  }
-  function fmt(x, dec) { return x.toFixed(dec === undefined ? 1 : dec).replace(".", ","); }
 
-  // ---- lecture de l'historique ------------------------------------------
-  function parseHistorique(txt) {
-    var seen = {}, snaps = {}, byDir = { PR: {}, RP: {} };
-    txt.split("\n").forEach(function (line) {
-      line = line.trim();
-      if (!line) return;
-      var o;
-      try { o = JSON.parse(line); } catch (e) { return; }
-      if (!o || !o.snapshot || !o.date || !o.dep) return;
-      var uniq = o.snapshot + "|" + o.dir + "|" + o.date + "|" + o.train_no + "|" + o.dep;
-      if (seen[uniq]) return;            // le robot tourne 2x/jour : lignes en double
-      seen[uniq] = 1;
-      snaps[o.snapshot] = 1;
-      var d = byDir[o.dir] || (byDir[o.dir] = {});
-      var key = o.date + "|" + o.dep.slice(0, 5) + "|" + o.train_no;
-      if (!d[key]) {
-        d[key] = { date: o.date, dep: o.dep.slice(0, 5), no: o.train_no,
-                   n: 0, first: o.snapshot };
-      }
-      d[key].n += 1;                     // 1 releve unique = 1 jour de presence
-      if (o.snapshot < d[key].first) d[key].first = o.snapshot;
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
-    var liste = Object.keys(snaps).sort();
-    return { snaps: liste, snapSet: snaps, byDir: byDir };
   }
 
-  // nb de releves pendant lesquels cette date POUVAIT etre visible
-  // (jeu de donnees SNCF = 30 jours glissants a partir du jour du releve)
-  function exposition(dateIso) {
-    var t = dayMs(dateIso), n = 0;
-    DATA.snaps.forEach(function (s) {
-      var ms = dayMs(s);
-      if (ms <= t && t <= ms + 30 * DAY) n += 1;
-    });
-    return n;
+  function dureeMin(dep, arr) {
+    var d = dep.split(':'), a = arr.split(':');
+    var m = (parseInt(a[0], 10) * 60 + parseInt(a[1], 10)) - (parseInt(d[0], 10) * 60 + parseInt(d[1], 10));
+    if (m < 0) m += 1440;
+    return Math.floor(m / 60) + 'h' + ('0' + (m % 60)).slice(-2);
   }
 
-  // Delai d'ouverture : ecart entre la date de circulation et le jour ou le train
-  // est devenu reservable alors qu'il ne l'etait pas la veille. Renvoie null si
-  // l'historique ne contient pas de releve la veille (train deja la au demarrage).
-  function delai(t) {
-    var fs = dayMs(t.first);
-    if (!DATA.snapSet[isoOf(fs - DAY)]) return null;
-    return (dayMs(t.date) - fs) / DAY;
+  function dateFR(iso) {
+    var p = iso.split('-');
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    return JOURS_LONG[d.getUTCDay()] + ' ' + p[2] + '/' + p[1];
   }
 
-  function histo(vals) {
-    var h = [], i;
-    for (i = 0; i < BINS.length; i++) h.push(0);
-    vals.forEach(function (x) {
-      for (var k = 0; k < BINS.length; k++) {
-        if (x >= BINS[k][0] && x <= BINS[k][1]) { h[k] += 1; return; }
-      }
-      h[BINS.length - 1] += 1;           // au-dela de 29 : derniere classe
-    });
-    return h;
+  function dow(iso) {
+    var p = iso.split('-');
+    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
   }
 
-  // ---- construction du tableau -------------------------------------------
-  function buildTable() {
-    var trains = [];
-    var map = DATA.byDir[dir] || {};
-    for (var k in map) if (map.hasOwnProperty(k)) trains.push(map[k]);
-    if (!trains.length) return null;
-
-    // lignes = horaires (exacts ou tranches)
-    var rowKeys = {};
-    trains.forEach(function (t) { rowKeys[t.dep] = 1; });
-    var rows = Object.keys(rowKeys).sort();
-    var rowOf = function (t) { return t.dep; };
-
-    // dates disponibles par jour de semaine, en ordre chronologique
-    // (passe et futur traites a egalite)
-    var datesOf = {};
-    var vus = {};
-    trains.forEach(function (t) {
-      if (vus[t.date]) return;
-      vus[t.date] = 1;
-      var ms = dayMs(t.date);
-      (datesOf[dow(ms)] || (datesOf[dow(ms)] = [])).push(ms);
-    });
-    COLS.forEach(function (d) {
-      if (datesOf[d]) datesOf[d].sort(function (a, b) { return a - b; });
-    });
-
-    // index : date|ligne -> [trains]
-    var idx = {};
-    trains.forEach(function (t) {
-      var key = t.date + "|" + rowOf(t);
-      (idx[key] || (idx[key] = [])).push(t);
-    });
-
-    var cells = {}, vMin = Infinity, vMax = -Infinity, nCell = 0;
-    rows.forEach(function (r, ri) {
-      COLS.forEach(function (d, ci) {
-        var liste = datesOf[d] || [];
-        var sv = 0, nb = 0, detail = [], brut = [];
-        liste.forEach(function (ms) {
-          var iso = new Date(ms).toISOString().slice(0, 10);
-          var arr = idx[iso + "|" + r];
-          if (!arr || !arr.length) return;
-          var moy = 0, cpt = 0;
-          arr.forEach(function (t) {
-            var x = metric === "duree" ? t.n : delai(t);
-            if (x === null) return;      // delai non mesurable pour ce train
-            moy += x; cpt += 1;
-            brut.push(x);                // mesures individuelles, pour l'histogramme
-          });
-          if (cpt === 0) return;
-          moy /= cpt;                    // plusieurs trains au meme horaire
-          sv += moy; nb += 1;            // chaque occurrence compte pareil
-          detail.push({ ms: ms, n: moy, nb: cpt, expo: exposition(iso) });
-        });
-        if (nb === 0) return;
-        var v = sv / nb;
-        cells[ci + "," + ri] = { v: v, detail: detail, brut: brut, hist: histo(brut) };
-        nCell += 1;
-        if (v < vMin) vMin = v;
-        if (v > vMax) vMax = v;
+  // ---------- Chargement des trains (API SNCF, CORS ok) ----------
+  function fetchDirection(origLike, destLike, key, done) {
+    var all = [];
+    function page(offset) {
+      var where = 'origine like "' + origLike + '" AND destination like "' + destLike + '" AND od_happy_card="OUI"';
+      var url = API + '?where=' + encodeURIComponent(where) +
+        '&order_by=date,heure_depart&limit=100&offset=' + offset;
+      fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+        var res = j.results || [];
+        all = all.concat(res);
+        if (res.length === 100 && offset + 100 < 900) {
+          page(offset + 100);
+        } else {
+          trains[key] = all;
+          done();
+        }
+      }).catch(function (e) {
+        $('status').textContent = 'Erreur API SNCF : ' + e.message;
       });
-    });
-    if (!nCell) return null;
-    if (vMax === vMin) vMax = vMin + 1;
-    return { rows: rows, cells: cells, vMin: vMin, vMax: vMax, nCell: nCell };
+    }
+    page(0);
   }
 
-  // rouge (faible) -> jaune -> vert (eleve)
-  function color(v, lo, hi) {
-    var r = (v - lo) / (hi - lo);
-    if (r < 0) r = 0; if (r > 1) r = 1;
-    return "hsl(" + Math.round(130 * r) + ",62%," + (42 - 4 * r).toFixed(0) + "%)";
+  function loadTrains() {
+    var pending = 2;
+    function one() { pending -= 1; if (pending === 0) render(); }
+    fetchDirection('PARIS%', 'RENNES', 'PR', one);
+    fetchDirection('RENNES', 'PARIS%', 'RP', one);
   }
 
-  // ---- rendu -------------------------------------------------------------
+  // ---------- Rendu ----------
+  function matchRegle(t, dir) {
+    var d = dow(t.date);
+    for (var i = 0; i < config.regles.length; i++) {
+      var r = config.regles[i];
+      var sens = r.sens || 'BOTH';
+      if (sens !== 'BOTH' && sens !== dir) continue;
+      if (r.jour === d && t.heure_depart >= r.debut && t.heure_depart <= r.fin) return true;
+    }
+    return false;
+  }
+
   function render() {
-    var g = buildTable();
-    var cv = $("grid");
-    if (!g) {
-      $("status").style.display = "block";
-      $("status").textContent = "Aucune donnée pour cette combinaison.";
-      cv.width = 0; cv.height = 0;
+    var data = trains[direction];
+    var byDate = {};
+    var i, t;
+    for (i = 0; i < data.length; i++) {
+      t = data[i];
+      if (dayFilter.size > 0 && !dayFilter.has(dow(t.date))) continue;
+      if (!byDate[t.date]) byDate[t.date] = [];
+      byDate[t.date].push(t);
+    }
+    var dates = Object.keys(byDate).sort();
+    var html = '';
+    for (i = 0; i < dates.length; i++) {
+      var dts = byDate[dates[i]];
+      html += '<div class="datecard"><div class="datehead"><span>' + esc(dateFR(dates[i])) +
+        '</span><span class="n">' + dts.length + ' train' + (dts.length > 1 ? 's' : '') + '</span></div>';
+      for (var k = 0; k < dts.length; k++) {
+        t = dts[k];
+        var dep = t.heure_depart.slice(0, 5), arr = t.heure_arrivee.slice(0, 5);
+        html += '<div class="train' + (matchRegle(t, direction) ? ' matched' : '') + '">' +
+          '<span class="hours">' + esc(dep) + ' → ' + esc(arr) + '</span>' +
+          '<span class="dur">' + dureeMin(dep, arr) + '</span>' +
+          '<span class="num">' + esc(t.entity || '') + ' ' + esc(t.train_no) + '</span></div>';
+      }
+      html += '</div>';
+    }
+    $('list').innerHTML = html || '<div class="empty">Aucune place MAX réservable sur ces critères pour les 30 prochains jours.</div>';
+    var total = trains.PR.length + trains.RP.length;
+    $('status').textContent = total + ' trains MAX réservables au total (30 jours glissants, MàJ SNCF chaque matin). Trait vert = créneau surveillé.';
+  }
+
+  // ---------- Filtres de jours ----------
+  function buildDayFilters() {
+    var order = [1, 2, 3, 4, 5, 6, 0];
+    var html = '';
+    for (var i = 0; i < order.length; i++) {
+      html += '<span class="daybtn" data-d="' + order[i] + '">' + JOURS[order[i]] + '</span>';
+    }
+    $('dayFilters').innerHTML = html;
+    var btns = document.querySelectorAll('.daybtn');
+    for (var k = 0; k < btns.length; k++) {
+      btns[k].addEventListener('click', function () {
+        var d = parseInt(this.getAttribute('data-d'), 10);
+        if (dayFilter.has(d)) { dayFilter.delete(d); this.classList.remove('on'); }
+        else { dayFilter.add(d); this.classList.add('on'); }
+        render();
+      });
+    }
+  }
+
+  // ---------- Config alertes ----------
+  function ruleRow(r, idx) {
+    var opts = '';
+    var order = [1, 2, 3, 4, 5, 6, 0];
+    for (var i = 0; i < order.length; i++) {
+      opts += '<option value="' + order[i] + '"' + (r.jour === order[i] ? ' selected' : '') + '>' +
+        JOURS_LONG[order[i]] + '</option>';
+    }
+    var sens = r.sens || 'BOTH';
+    var sensOpts =
+      '<option value="PR"' + (sens === 'PR' ? ' selected' : '') + '>Paris → Rennes</option>' +
+      '<option value="RP"' + (sens === 'RP' ? ' selected' : '') + '>Rennes → Paris</option>' +
+      '<option value="BOTH"' + (sens === 'BOTH' ? ' selected' : '') + '>Les deux sens</option>';
+    return '<div class="rule" data-i="' + idx + '">' +
+      '<select class="r-sens">' + sensOpts + '</select>' +
+      '<select class="r-jour">' + opts + '</select>' +
+      '<span>de</span><input type="time" class="r-debut" value="' + esc(r.debut) + '">' +
+      '<span>à</span><input type="time" class="r-fin" value="' + esc(r.fin) + '">' +
+      '<span class="del" title="Supprimer">✕</span></div>';
+  }
+
+  function renderRules() {
+    var html = '';
+    for (var i = 0; i < config.regles.length; i++) html += ruleRow(config.regles[i], i);
+    $('rules').innerHTML = html || '<div class="hint">Aucune règle. Ajoute par exemple « vendredi 16:00–21:00 ».</div>';
+    var dels = document.querySelectorAll('.rule .del');
+    for (var k = 0; k < dels.length; k++) {
+      dels[k].addEventListener('click', function () {
+        var idx = parseInt(this.parentNode.getAttribute('data-i'), 10);
+        readRulesFromDOM();
+        config.regles.splice(idx, 1);
+        renderRules();
+        render();
+      });
+    }
+    var inputs = document.querySelectorAll('.rule select, .rule input');
+    for (var m = 0; m < inputs.length; m++) {
+      inputs[m].addEventListener('change', function () { readRulesFromDOM(); render(); });
+    }
+  }
+
+  function readRulesFromDOM() {
+    var rows = document.querySelectorAll('.rule');
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      out.push({
+        sens: rows[i].querySelector('.r-sens').value,
+        jour: parseInt(rows[i].querySelector('.r-jour').value, 10),
+        debut: rows[i].querySelector('.r-debut').value || '00:00',
+        fin: rows[i].querySelector('.r-fin').value || '23:59'
+      });
+    }
+    config.regles = out;
+  }
+
+  function loadConfig() {
+    var url = 'https://raw.githubusercontent.com/' + REPO_OWNER + '/' + REPO_NAME + '/main/' + CFG_PATH + '?t=' + Date.now();
+    fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('absent');
+      return r.json();
+    }).then(function (j) {
+      config = j;
+      if (!config.regles) config.regles = [];
+      renderRules();
+      render();
+      if (config.modifie_le) {
+        $('cfgmsg').textContent = 'Config actuelle : modifiée par ' + (config.modifie_par || '?') + ' le ' + config.modifie_le;
+      }
+    }).catch(function () {
+      renderRules();
+    });
+  }
+
+  function b64utf8(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  function saveConfig() {
+    readRulesFromDOM();
+    var token = localStorage.getItem('gh_token_tgvmax');
+    if (!token) {
+      $('tokrow').classList.remove('hidden');
+      $('cfgmsg').textContent = 'Colle ton token GitHub ci-dessus (une seule fois).';
       return;
     }
-    $("status").style.display = "none";
-
-    // canvas remplace a chaque rendu : evite d'empiler les ecouteurs
-    var old = cv;
-    cv = old.cloneNode(false);
-    old.parentNode.replaceChild(cv, old);
-
-    var wrap = cv.parentNode;
-    var padL = 44, padT = 20, padB = 4, padR = 2;
-    var avail = wrap.clientWidth - 16 - padL - padR;
-    var cw = Math.max(34, Math.floor(avail / COLS.length));
-    var histoOn = (metric === "delai");
-    var ch = 21;
-    if (histoOn) {
-      // on cale la hauteur de ligne pour que tous les horaires tiennent
-      // dans ce qui reste de l'ecran sous les filtres
-      var dispo = window.innerHeight - (cv.parentNode.offsetTop || 300) - 24;
-      ch = Math.floor((dispo - 20 - 4) / g.rows.length * 1.4);
-      if (ch < 22) ch = 22;
-      if (ch > 44) ch = 44;
-    }
-    var W = padL + COLS.length * cw + padR;
-    var H = padT + g.rows.length * ch + padB;
-
-    var dpr = window.devicePixelRatio || 1;
-    cv.width = W * dpr; cv.height = H * dpr;
-    cv.style.width = W + "px"; cv.style.height = H + "px";
-    var ctx = cv.getContext("2d");
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, W, H);
-
-    // en-tete
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "center";
-    ctx.font = "10px -apple-system, sans-serif";
-    COLS.forEach(function (d, ci) {
-      ctx.fillStyle = d === 0 ? "#58a6ff" : "#8b949e";
-      ctx.fillText(COURT[d], padL + ci * cw + cw / 2, padT / 2 + 1);
-    });
-
-    // cases
-    g.rows.forEach(function (r, ri) {
-      var y = padT + ri * ch;
-      ctx.font = "9.5px -apple-system, sans-serif";
-      ctx.fillStyle = "#8b949e";
-      ctx.textAlign = "right";
-      ctx.fillText(r, padL - 5, y + ch / 2);
-      COLS.forEach(function (d, ci) {
-        var x = padL + ci * cw;
-        var c = g.cells[ci + "," + ri];
-        if (!c) {
-          ctx.fillStyle = "#1c2129";
-          ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2);
-          return;
-        }
-        ctx.fillStyle = color(c.v, g.vMin, g.vMax);
-        ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2);
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "center";
-        if (!histoOn) {
-          ctx.font = "bold 10px -apple-system, sans-serif";
-          ctx.fillText(fmt(c.v) + " j", x + cw / 2, y + ch / 2);
-        } else {
-          var fs = Math.max(7.5, Math.min(9.5, ch * 0.42));
-          ctx.font = "bold " + fs.toFixed(1) + "px -apple-system, sans-serif";
-          ctx.fillText("J-" + fmt(c.v), x + cw / 2, y + fs + 1);
-          // mini histogramme : une barre par classe, hauteur normalisee sur la case
-          var hmax = 0;
-          c.hist.forEach(function (n) { if (n > hmax) hmax = n; });
-          if (hmax > 0) {
-            var usable = cw - 8;
-            var bw = usable / BINS.length;
-            var base = y + ch - 2.5;
-            // barres volontairement basses : elles ne doivent jamais remonter
-            // jusqu'au chiffre, qui reste l'information principale de la case
-            var hMaxPx = Math.max(4, (ch - fs - 4) * 0.55);
-            c.hist.forEach(function (n, bi) {
-              if (!n) return;
-              var bh = Math.max(1.2, hMaxPx * n / hmax);
-              ctx.fillStyle = "rgba(255,255,255,0.82)";
-              ctx.fillRect(x + 4 + bi * bw, base - bh, Math.max(1.5, bw - 1.2), bh);
-            });
-            ctx.strokeStyle = "rgba(255,255,255,0.35)";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(x + 4, base + 0.5);
-            ctx.lineTo(x + 4 + usable, base + 0.5);
-            ctx.stroke();
-          }
-        }
-      });
-    });
-
-    $("metricNote").innerHTML = metric === "duree"
-      ? "Ici, la <b>durée pendant laquelle le train reste réservable</b>. " +
-        "<b>Rouge = part vite, vert = reste disponible.</b>"
-      : "Ici, le <b>délai entre l'ouverture à la réservation et la circulation</b>. " +
-        "<b>Rouge = ouvre au dernier moment, vert = ouvre longtemps à l'avance.</b>";
-
-    // infobulle
-    function show(cx, cy) {
-      var r = cv.getBoundingClientRect();
-      var ci = Math.floor((cx - r.left - padL) / cw);
-      var ri = Math.floor((cy - r.top - padT) / ch);
-      if (ci < 0 || ci >= COLS.length || ri < 0 || ri >= g.rows.length) {
-        tip.style.display = "none"; return;
-      }
-      var c = g.cells[ci + "," + ri];
-      var html = "<b>" + NOMS[COLS[ci]] + " " + g.rows[ri] + "</b><br>";
-      if (!c) {
-        html += "aucune place MAX observée";
-      } else {
-        html += (metric === "duree" ? "durée moyenne : " : "délai moyen : ") +
-          "<b>" + fmt(c.v) + " j</b> sur " + c.detail.length +
-          " occurrence" + (c.detail.length > 1 ? "s" : "") + "<br>";
-        if (metric === "delai") {
-          var parts = [];
-          c.hist.forEach(function (n, bi) {
-            if (n) parts.push("J-" + BINS_LBL[bi] + " : " + n);
-          });
-          if (parts.length) html += "<i>" + parts.join(" · ") + "</i><br>";
-        }
-        c.detail.forEach(function (o) {
-          html += jjmm(o.ms) + " — " + fmt(o.n) + " j" +
-            (o.nb > 1 ? " (" + o.nb + " trains)" : "") +
-            (metric === "duree"
-              ? " · " + o.expo + " relevé" + (o.expo > 1 ? "s" : "") + " possible" +
-                (o.expo > 1 ? "s" : "")
-              : "") + "<br>";
+    config.modifie_par = localStorage.getItem('tgvmax_user') || 'Daniel';
+    config.modifie_le = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    var apiUrl = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + CFG_PATH;
+    $('cfgmsg').textContent = 'Enregistrement…';
+    // 1) récupérer le sha actuel (si le fichier existe)
+    fetch(apiUrl, { headers: { Authorization: 'Bearer ' + token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var body = {
+          message: 'MAJ config alertes via dashboard',
+          content: b64utf8(JSON.stringify(config, null, 2))
+        };
+        if (j && j.sha) body.sha = j.sha;
+        return fetch(apiUrl, {
+          method: 'PUT',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         });
-      }
-      tip.innerHTML = html;
-      tip.style.display = "block";
-      // decalage vers le bas et vers la droite pour degager le doigt ;
-      // on mesure l'infobulle une fois affichee pour ne recadrer que si elle deborde
-      var tw = tip.offsetWidth || 240, th = tip.offsetHeight || 90;
-      var L = cx + 26, T = cy + 36;
-      if (L + tw > window.innerWidth - 8) L = window.innerWidth - 8 - tw;
-      if (L < 8) L = 8;
-      if (T + th > window.innerHeight - 8) T = cy - th - 22;   // bascule au-dessus
-      if (T < 8) T = 8;
-      tip.style.left = L + "px";
-      tip.style.top = T + "px";
-    }
-
-    // Gestion du geste tactile : un glissement vertical doit faire defiler la page,
-    // un appui ou un glissement horizontal doit interroger les cases.
-    // On ne decide qu'au premier deplacement significatif, puis on s'y tient
-    // jusqu'a la fin du geste.
-    var geste = null;          // null = indecis, "defile" ou "sonde"
-    var x0 = 0, y0 = 0, attente = null;
-
-    cv.addEventListener("mousemove", function (ev) { show(ev.clientX, ev.clientY); });
-    cv.addEventListener("mouseleave", function () { tip.style.display = "none"; });
-
-    cv.addEventListener("touchstart", function (ev) {
-      var t = ev.touches[0];
-      x0 = t.clientX; y0 = t.clientY;
-      geste = null;
-      // petit delai : evite que l'infobulle clignote a chaque debut de defilement
-      clearTimeout(attente);
-      attente = setTimeout(function () { show(x0, y0); }, 140);
-    }, { passive: true });
-
-    cv.addEventListener("touchmove", function (ev) {
-      var t = ev.touches[0];
-      if (geste === null) {
-        var dx = Math.abs(t.clientX - x0), dy = Math.abs(t.clientY - y0);
-        if (dx < 8 && dy < 8) return;             // trop tot pour trancher
-        geste = dy > dx ? "defile" : "sonde";
-        if (geste === "defile") {                 // on rend la main au navigateur
-          clearTimeout(attente);
-          tip.style.display = "none";
-          return;
+      })
+      .then(function (r) {
+        if (r.ok) {
+          $('cfgmsg').textContent = '✅ Config enregistrée — prise en compte au prochain passage du robot.';
+        } else if (r.status === 401 || r.status === 403) {
+          localStorage.removeItem('gh_token_tgvmax');
+          $('tokrow').classList.remove('hidden');
+          $('cfgmsg').textContent = '❌ Token refusé ou expiré, recolle-le.';
+        } else {
+          $('cfgmsg').textContent = '❌ Erreur GitHub (HTTP ' + r.status + ').';
         }
-      }
-      if (geste === "defile") return;
-      clearTimeout(attente);
-      ev.preventDefault();                        // exploration : on garde le geste
-      show(t.clientX, t.clientY);
-    }, { passive: false });
-
-    cv.addEventListener("touchend", function () {
-      geste = null;
-      setTimeout(function () { tip.style.display = "none"; }, 3500);
-    });
+      })
+      .catch(function (e) { $('cfgmsg').textContent = '❌ Erreur réseau : ' + e.message; });
   }
 
-  // ---- interactions ------------------------------------------------------
-  function groupe(sel, attr, set) {
-    var els = document.querySelectorAll(sel);
-    for (var i = 0; i < els.length; i++) {
-      els[i].addEventListener("click", function () {
-        for (var k = 0; k < els.length; k++) {
-          els[k].classList.toggle(attr === "data-dir" ? "active" : "on", els[k] === this);
-        }
-        set(this.getAttribute(attr));
-        if (DATA) render();
-      });
+  // ---------- Événements ----------
+  $('tabPR').addEventListener('click', function () {
+    direction = 'PR';
+    this.classList.add('active'); $('tabRP').classList.remove('active');
+    render();
+  });
+  $('tabRP').addEventListener('click', function () {
+    direction = 'RP';
+    this.classList.add('active'); $('tabPR').classList.remove('active');
+    render();
+  });
+  $('cfgToggle').addEventListener('click', function () {
+    var b = $('cfgBody');
+    b.classList.toggle('hidden');
+    this.textContent = b.classList.contains('hidden') ? 'afficher' : 'masquer';
+  });
+  $('statToggle').addEventListener('click', function () {
+    var b = $('statBody');
+    b.classList.toggle('hidden');
+    this.textContent = b.classList.contains('hidden') ? 'afficher' : 'masquer';
+  });
+  $('addRule').addEventListener('click', function () {
+    readRulesFromDOM();
+    config.regles.push({ sens: 'PR', jour: 5, debut: '16:00', fin: '21:00' });
+    renderRules();
+    render();
+  });
+  $('saveCfg').addEventListener('click', saveConfig);
+  $('tokSave').addEventListener('click', function () {
+    var v = $('tokInput').value.trim();
+    if (v) {
+      localStorage.setItem('gh_token_tgvmax', v);
+      $('tokrow').classList.add('hidden');
+      saveConfig();
     }
-  }
-  groupe(".tab", "data-dir", function (v) { dir = v; });
-  groupe("[data-metric]", "data-metric", function (v) { metric = v; });
+  });
 
-  fetch("historique.jsonl?t=" + Date.now())
-    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
-    .then(function (txt) { DATA = parseHistorique(txt); render(); })
-    .catch(function (e) { $("status").textContent = "Erreur de chargement : " + e.message; });
+  // ---------- Init ----------
+  buildDayFilters();
+  loadConfig();
+  loadTrains();
 })();
 </script>
 </body>
