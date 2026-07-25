@@ -23,7 +23,7 @@ h1 small{color:var(--muted);font-weight:normal;font-size:0.65em;}
 .pill{padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:14px;font-size:0.78em;cursor:pointer;color:var(--muted);user-select:none;}
 .pill.on{border-color:var(--acc);color:var(--acc);background:#0d2117;}
 .panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-canvas{display:block;}
+canvas{display:block;touch-action:pan-y;}
 #status{color:var(--muted);font-size:0.8em;margin-bottom:10px;}
 .hint{color:var(--muted);font-size:0.75em;line-height:1.55;margin-top:4px;}
 .hint b{color:var(--txt);}
@@ -249,7 +249,15 @@ canvas{display:block;}
     var avail = wrap.clientWidth - 16 - padL - padR;
     var cw = Math.max(34, Math.floor(avail / COLS.length));
     var histoOn = (metric === "delai");
-    var ch = histoOn ? 38 : 21;
+    var ch = 21;
+    if (histoOn) {
+      // on cale la hauteur de ligne pour que tous les horaires tiennent
+      // dans ce qui reste de l'ecran sous les filtres
+      var dispo = window.innerHeight - (cv.parentNode.offsetTop || 300) - 24;
+      ch = Math.floor((dispo - 20 - 4) / g.rows.length * 1.4);
+      if (ch < 22) ch = 22;
+      if (ch > 44) ch = 44;
+    }
     var W = padL + COLS.length * cw + padR;
     var H = padT + g.rows.length * ch + padB;
 
@@ -291,21 +299,24 @@ canvas{display:block;}
         ctx.textAlign = "center";
         if (!histoOn) {
           ctx.font = "bold 10px -apple-system, sans-serif";
-          ctx.fillText(fmt(c.v), x + cw / 2, y + ch / 2);
+          ctx.fillText(fmt(c.v) + " j", x + cw / 2, y + ch / 2);
         } else {
-          ctx.font = "bold 9.5px -apple-system, sans-serif";
-          ctx.fillText(fmt(c.v), x + cw / 2, y + 9);
+          var fs = Math.max(7.5, Math.min(9.5, ch * 0.42));
+          ctx.font = "bold " + fs.toFixed(1) + "px -apple-system, sans-serif";
+          ctx.fillText("J-" + fmt(c.v), x + cw / 2, y + fs + 1);
           // mini histogramme : une barre par classe, hauteur normalisee sur la case
           var hmax = 0;
           c.hist.forEach(function (n) { if (n > hmax) hmax = n; });
           if (hmax > 0) {
             var usable = cw - 8;
             var bw = usable / BINS.length;
-            var base = y + ch - 4;
-            var hMaxPx = ch - 20;
+            var base = y + ch - 2.5;
+            // barres volontairement basses : elles ne doivent jamais remonter
+            // jusqu'au chiffre, qui reste l'information principale de la case
+            var hMaxPx = Math.max(4, (ch - fs - 4) * 0.55);
             c.hist.forEach(function (n, bi) {
               if (!n) return;
-              var bh = Math.max(1.5, hMaxPx * n / hmax);
+              var bh = Math.max(1.2, hMaxPx * n / hmax);
               ctx.fillStyle = "rgba(255,255,255,0.82)";
               ctx.fillRect(x + 4 + bi * bw, base - bh, Math.max(1.5, bw - 1.2), bh);
             });
@@ -327,10 +338,8 @@ canvas{display:block;}
         "<b>Rouge = ouvre au dernier moment, vert = ouvre longtemps à l'avance.</b>";
 
     // infobulle
-    function show(ev) {
+    function show(cx, cy) {
       var r = cv.getBoundingClientRect();
-      var cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
-      var cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
       var ci = Math.floor((cx - r.left - padL) / cw);
       var ri = Math.floor((cy - r.top - padT) / ch);
       if (ci < 0 || ci >= COLS.length || ri < 0 || ri >= g.rows.length) {
@@ -362,16 +371,58 @@ canvas{display:block;}
       }
       tip.innerHTML = html;
       tip.style.display = "block";
-      tip.style.left = Math.min(cx + 12, window.innerWidth - 270) + "px";
-      tip.style.top = Math.min(cy + 14, window.innerHeight - 130) + "px";
-      if (ev.cancelable) ev.preventDefault();
+      // decalage vers le bas et vers la droite pour degager le doigt ;
+      // on mesure l'infobulle une fois affichee pour ne recadrer que si elle deborde
+      var tw = tip.offsetWidth || 240, th = tip.offsetHeight || 90;
+      var L = cx + 26, T = cy + 36;
+      if (L + tw > window.innerWidth - 8) L = window.innerWidth - 8 - tw;
+      if (L < 8) L = 8;
+      if (T + th > window.innerHeight - 8) T = cy - th - 22;   // bascule au-dessus
+      if (T < 8) T = 8;
+      tip.style.left = L + "px";
+      tip.style.top = T + "px";
     }
-    cv.addEventListener("mousemove", show);
-    cv.addEventListener("touchstart", show, { passive: false });
-    cv.addEventListener("touchmove", show, { passive: false });
+
+    // Gestion du geste tactile : un glissement vertical doit faire defiler la page,
+    // un appui ou un glissement horizontal doit interroger les cases.
+    // On ne decide qu'au premier deplacement significatif, puis on s'y tient
+    // jusqu'a la fin du geste.
+    var geste = null;          // null = indecis, "defile" ou "sonde"
+    var x0 = 0, y0 = 0, attente = null;
+
+    cv.addEventListener("mousemove", function (ev) { show(ev.clientX, ev.clientY); });
     cv.addEventListener("mouseleave", function () { tip.style.display = "none"; });
+
+    cv.addEventListener("touchstart", function (ev) {
+      var t = ev.touches[0];
+      x0 = t.clientX; y0 = t.clientY;
+      geste = null;
+      // petit delai : evite que l'infobulle clignote a chaque debut de defilement
+      clearTimeout(attente);
+      attente = setTimeout(function () { show(x0, y0); }, 140);
+    }, { passive: true });
+
+    cv.addEventListener("touchmove", function (ev) {
+      var t = ev.touches[0];
+      if (geste === null) {
+        var dx = Math.abs(t.clientX - x0), dy = Math.abs(t.clientY - y0);
+        if (dx < 8 && dy < 8) return;             // trop tot pour trancher
+        geste = dy > dx ? "defile" : "sonde";
+        if (geste === "defile") {                 // on rend la main au navigateur
+          clearTimeout(attente);
+          tip.style.display = "none";
+          return;
+        }
+      }
+      if (geste === "defile") return;
+      clearTimeout(attente);
+      ev.preventDefault();                        // exploration : on garde le geste
+      show(t.clientX, t.clientY);
+    }, { passive: false });
+
     cv.addEventListener("touchend", function () {
-      setTimeout(function () { tip.style.display = "none"; }, 2500);
+      geste = null;
+      setTimeout(function () { tip.style.display = "none"; }, 3500);
     });
   }
 
