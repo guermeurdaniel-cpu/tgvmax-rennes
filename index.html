@@ -2,368 +2,591 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>TGV Max Paris–Rennes</title>
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<title>PAASI — Moteurs de l'indice</title>
 <style>
-:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--txt:#e6edf3;--muted:#8b949e;--acc:#2ea043;--acc2:#58a6ff;--warn:#d29922;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:12px;padding-bottom:40px;max-width:760px;margin:0 auto;}
-h1{font-size:1.15em;margin:6px 0 12px;display:flex;align-items:center;gap:8px;}
-h1 small{color:var(--muted);font-weight:normal;font-size:0.65em;}
-.tabs{display:flex;gap:6px;margin-bottom:12px;}
-.tab{flex:1;padding:9px 6px;background:var(--card);border:1px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-size:0.9em;user-select:none;}
-.tab.active{border-color:var(--acc2);background:#0d2137;color:var(--acc2);font-weight:600;}
-.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.daybtn{padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:14px;font-size:0.8em;cursor:pointer;color:var(--muted);user-select:none;}
-.daybtn.on{border-color:var(--acc);color:var(--acc);background:#0d2117;}
-.datecard{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
-.datehead{padding:8px 12px;font-weight:600;font-size:0.9em;background:#1c2129;display:flex;justify-content:space-between;}
-.datehead .n{color:var(--acc);font-weight:normal;font-size:0.9em;}
-.train{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--border);font-size:0.9em;}
-.train .hours{font-variant-numeric:tabular-nums;font-weight:600;min-width:110px;}
-.train .dur{color:var(--muted);font-size:0.85em;}
-.train .num{margin-left:auto;color:var(--muted);font-size:0.8em;}
-.train.matched{border-left:3px solid var(--acc);}
-.empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:0.9em;}
-#status{color:var(--muted);font-size:0.8em;margin-bottom:10px;}
-.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;}
-.panel h2{font-size:0.95em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
-.panel h2 .toggle{color:var(--acc2);font-size:0.85em;cursor:pointer;font-weight:normal;}
-.rule{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
-.rule select,.rule input[type=time]{background:#0d1117;color:var(--txt);border:1px solid var(--border);border-radius:6px;padding:5px 6px;font-size:0.85em;}
-.rule .del{color:#f85149;cursor:pointer;padding:4px 8px;font-size:1.05em;user-select:none;}
-.btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
-button{background:var(--card);color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.85em;cursor:pointer;}
-button.primary{background:#1a7f37;border-color:#2ea043;color:#fff;}
-#cfgmsg{font-size:0.8em;margin-top:8px;color:var(--muted);}
-#tokrow{margin-top:10px;display:flex;gap:6px;}
-#tokrow input{flex:1;background:#0d1117;color:var(--txt);border:1px solid var(--border);border-radius:6px;padding:7px;font-size:0.8em;}
-.hidden{display:none;}
-.hint{color:var(--muted);font-size:0.75em;margin-top:6px;line-height:1.4;}
+  :root {
+    --bg: #10131a; --panel: #181c26; --txt: #e8eaf0; --dim: #8a91a3;
+    --pos: #2ecc71; --neg: #e74c3c; --line: #2a3040;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--txt);
+         font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+         padding: 12px 10px 30px; }
+  h1 { font-size: 17px; font-weight: 700; }
+  .sub { font-size: 11.5px; color: var(--dim); margin: 4px 0 10px; line-height: 1.5; }
+  .kpis { display: flex; gap: 8px; margin-bottom: 12px; }
+  .kpi { flex: 1; background: var(--panel); border-radius: 10px; padding: 8px 10px; }
+  .kpi .v { font-size: 16px; font-weight: 700; }
+  .kpi .l { font-size: 10px; color: var(--dim); margin-top: 2px; }
+  .kpi .v.pos { color: var(--pos); } .kpi .v.neg { color: var(--neg); }
+  .panel { background: var(--panel); border-radius: 12px; padding: 12px 8px; }
+  canvas { display: block; width: 100%; }
+  .seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line);
+         border-radius: 9px; overflow: hidden; margin-bottom: 10px; }
+  .seg button { background: transparent; border: 0; color: var(--dim); font-size: 11.5px;
+                font-weight: 600; padding: 7px 14px; }
+  .seg button.on { background: #222838; color: var(--txt); }
+  .upd { font-size: 10px; color: var(--dim); text-align: right; margin: -4px 0 8px; }
+  .upd button { background: none; border: 0; color: var(--dim); font-size: 12px;
+                padding: 0 0 0 6px; }
+  .foot { font-size: 10px; color: var(--dim); margin-top: 10px; line-height: 1.6; }
+  #status { font-size: 11px; color: var(--dim); padding: 20px; text-align: center; }
+  .h2 { font-size: 12.5px; font-weight: 700; margin: 16px 0 6px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px;
+            font-size: 10.5px; color: var(--dim); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+              margin-right: 5px; vertical-align: -1px; }
+  .legend b { color: var(--txt); font-weight: 600; }
+  .tip { position: fixed; display: none; background: #000c; color: #fff;
+         font-size: 11px; padding: 6px 9px; border-radius: 7px;
+         pointer-events: none; z-index: 9; max-width: 240px; line-height: 1.5; }
 </style>
 </head>
 <body>
-<h1>🚄 TGV Max <small>Paris ↔ Rennes · places MAX réservables</small></h1>
-
-<div class="panel">
-  <h2>🔔 Alertes Telegram <span class="toggle" id="cfgToggle">afficher</span></h2>
-  <div id="cfgBody" class="hidden">
-    <div id="rules"></div>
-    <div class="btnrow">
-      <button id="addRule">+ Ajouter une règle</button>
-      <button id="saveCfg" class="primary">💾 Enregistrer sur GitHub</button>
-    </div>
-    <div id="tokrow" class="hidden">
-      <input type="password" id="tokInput" placeholder="Token GitHub (fine-grained PAT)">
-      <button id="tokSave">OK</button>
-    </div>
-    <div id="cfgmsg"></div>
-    <div class="hint">Les règles définissent les créneaux surveillés : le robot envoie une alerte Telegram quand un nouveau train MAX apparaît dans un de ces créneaux. Le token est stocké uniquement dans ce navigateur.</div>
-  </div>
+<h1>PAASI — Moteurs de l'indice sur 30 jours</h1>
+<div class="sub" id="subtitle">Chargement…</div>
+<div class="seg" id="modeSeg">
+  <button data-m="30j" class="on">30 jours</button>
+  <button data-m="jour">Journée</button>
 </div>
-
-<div class="tabs">
-  <div class="tab active" id="tabPR">Paris → Rennes</div>
-  <div class="tab" id="tabRP">Rennes → Paris</div>
+<div class="upd" id="upd" style="display:none"></div>
+<div class="kpis" id="kpis" style="display:none">
+  <div class="kpi"><div class="v" id="kSum">–</div><div class="l">Somme contributions (pts %)</div></div>
+  <div class="kpi"><div class="v" id="kCov">–</div><div class="l">Poids couvert</div></div>
+  <div class="kpi"><div class="v" id="kN">–</div><div class="l">Valeurs suivies</div></div>
 </div>
-<div class="filters" id="dayFilters"></div>
-<div id="status">Chargement…</div>
-<div id="list"></div>
+<div class="panel"><canvas id="chart"></canvas></div>
+<div id="linesBlock" style="display:none">
+  <div class="h2" id="linesTitle">Historique 30 jours des 4 plus gros contributeurs</div>
+  <div class="panel"><canvas id="lines"></canvas></div>
+  <div class="legend" id="linesLegend"></div>
+</div>
+<div id="status">Chargement de contributions.json…</div>
+<div class="foot" id="foot">
+  Contribution = poids d'indice &times; performance 30 j en EUR (change inclus).
+  Composition proxy : iShares MSCI EM Asia (physique) — l'indice de PAASI
+  (Screened Select ex Thermal Coal) applique des filtres supplémentaires
+  marginaux sur les grandes capitalisations. PAASI &eacute;tant &agrave;
+  r&eacute;plication synth&eacute;tique, Amundi ne publie pas les constituants.
+</div>
+<div class="tip" id="tip"></div>
 
 <script>
 (function () {
-  'use strict';
+  "use strict";
 
-  // ---------- Constantes ----------
-  var API = 'https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets/tgvmax/records';
-  var REPO_OWNER = 'guermeurdaniel-cpu';
-  var REPO_NAME = 'tgvmax-rennes';
-  var CFG_PATH = 'alerte_config.json';
-  var JOURS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-  var JOURS_LONG = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  var TOP = 20;
+  var tip = document.getElementById("tip");
 
-  // ---------- État ----------
-  var direction = 'PR'; // PR = Paris->Rennes, RP = Rennes->Paris
-  var dayFilter = new Set(); // vide = tous les jours
-  var trains = { PR: [], RP: [] };
-  var config = { regles: [], modifie_par: '', modifie_le: '' };
+  function fmtPct(x, dec) {
+    var s = (x >= 0 ? "+" : "") + x.toFixed(dec === undefined ? 2 : dec);
+    return s.replace(".", ",");
+  }
 
-  // ---------- Utilitaires ----------
-  function $(id) { return document.getElementById(id); }
+  // items : [{name, contrib, tip:"html du tooltip"}], deja tries/tronques par l'appelant
+  function renderBars(items, footerHtml, axisCaption) {
+    document.getElementById("kpis").style.display = "flex";
+    document.getElementById("status").style.display = "none";
+    document.getElementById("foot").innerHTML = footerHtml;
 
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    var top = items;
+    var cv = document.getElementById("chart");
+    var dpr = window.devicePixelRatio || 1;
+    var W = cv.parentNode.clientWidth - 16;
+    var rowH = 26, padT = 8, padB = 22;
+    var H = padT + top.length * rowH + padB;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.height = H + "px";
+    var ctx = cv.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    var maxAbs = 0;
+    top.forEach(function (s) { maxAbs = Math.max(maxAbs, Math.abs(s.contrib)); });
+    if (maxAbs === 0) maxAbs = 1;
+
+    var labelW = Math.min(120, W * 0.34);
+    var valW = 52;
+    var zeroX = labelW + (W - labelW - valW) / 2;
+    var scale = (W - labelW - valW) / 2 / maxAbs * 0.96;
+
+    ctx.strokeStyle = "#2a3040";
+    ctx.beginPath();
+    ctx.moveTo(zeroX, padT);
+    ctx.lineTo(zeroX, H - padB);
+    ctx.stroke();
+
+    var hitboxes = [];
+    top.forEach(function (s, i) {
+      var y = padT + i * rowH;
+      var bh = rowH - 8;
+      var w = s.contrib * scale;
+
+      ctx.fillStyle = "#e8eaf0";
+      ctx.font = "10.5px -apple-system, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      var nm = s.name.length > 17 ? s.name.slice(0, 16) + "…" : s.name;
+      ctx.fillText(nm, 2, y + rowH / 2);
+
+      ctx.fillStyle = s.contrib >= 0 ? "#2ecc71" : "#e74c3c";
+      if (w >= 0) ctx.fillRect(zeroX, y + 4, w, bh);
+      else ctx.fillRect(zeroX + w, y + 4, -w, bh);
+
+      ctx.fillStyle = s.contrib >= 0 ? "#2ecc71" : "#e74c3c";
+      ctx.font = "bold 10.5px -apple-system, sans-serif";
+      if (w >= 0) {
+        ctx.textAlign = "left";
+        ctx.fillText(fmtPct(s.contrib), zeroX + w + 5, y + rowH / 2);
+      } else {
+        ctx.textAlign = "right";
+        ctx.fillText(fmtPct(s.contrib), zeroX + w - 5, y + rowH / 2);
+      }
+      hitboxes.push({ y0: y, y1: y + rowH, s: s });
+    });
+
+    ctx.fillStyle = "#8a91a3";
+    ctx.font = "9.5px -apple-system, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(axisCaption, zeroX, H - 8);
+
+    function showTip(ev) {
+      var r = cv.getBoundingClientRect();
+      var cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - r.top;
+      var cx = (ev.touches ? ev.touches[0].clientX : ev.clientX);
+      var hit = null;
+      for (var i = 0; i < hitboxes.length; i++)
+        if (cy >= hitboxes[i].y0 && cy < hitboxes[i].y1) { hit = hitboxes[i].s; break; }
+      if (!hit) { tip.style.display = "none"; return; }
+      tip.innerHTML = hit.tip;
+      tip.style.display = "block";
+      tip.style.left = Math.min(cx + 10, window.innerWidth - 250) + "px";
+      tip.style.top = (ev.touches ? ev.touches[0].clientY : ev.clientY) + 12 + "px";
+      ev.preventDefault();
+    }
+    cv.addEventListener("mousemove", showTip);
+    cv.addEventListener("touchstart", showTip, { passive: false });
+    cv.addEventListener("touchmove", showTip, { passive: false });
+    cv.addEventListener("mouseleave", function () { tip.style.display = "none"; });
+    cv.addEventListener("touchend", function () {
+      setTimeout(function () { tip.style.display = "none"; }, 1500);
     });
   }
 
-  function dureeMin(dep, arr) {
-    var d = dep.split(':'), a = arr.split(':');
-    var m = (parseInt(a[0], 10) * 60 + parseInt(a[1], 10)) - (parseInt(d[0], 10) * 60 + parseInt(d[1], 10));
-    if (m < 0) m += 1440;
-    return Math.floor(m / 60) + 'h' + ('0' + (m % 60)).slice(-2);
+  // ===== Historique des plus gros contributeurs (points d'indice) =========
+  // Chaque courbe = poids d'indice x perf EUR depuis J-30, en points de % d'indice.
+  // Les quatre courbes partent donc de zero et s'additionnent.
+  var LINE_COLORS = ["#4da3ff", "#ffb454", "#c678dd", "#3ddad7"];
+
+  function fmtDay(ms) {
+    var d = new Date(ms);
+    return ("0" + d.getUTCDate()).slice(-2) + "/" + ("0" + (d.getUTCMonth() + 1)).slice(-2);
   }
 
-  function dateFR(iso) {
-    var p = iso.split('-');
-    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
-    return JOURS_LONG[d.getUTCDay()] + ' ' + p[2] + '/' + p[1];
+  function renderLines(series) {
+    var block = document.getElementById("linesBlock");
+    if (!series || !series.length) { block.style.display = "none"; return; }
+
+    var curves = [];
+    series.forEach(function (s, i) {
+      var w = (s.weight == null) ? 0 : s.weight;
+      var pts = [];
+      (s.pts || []).forEach(function (p) {
+        var t = Date.parse(p[0] + "T00:00:00Z");
+        // base 100 -> contribution cumulee en points d'indice
+        if (!isNaN(t) && p[1] != null) pts.push({ t: t, v: w * (p[1] / 100 - 1) });
+      });
+      pts.sort(function (a, b) { return a.t - b.t; });
+      if (pts.length > 1) {
+        curves.push({
+          name: s.name, color: LINE_COLORS[i % LINE_COLORS.length], pts: pts,
+          weight: w, contrib: s.contrib
+        });
+      }
+    });
+    if (!curves.length) { block.style.display = "none"; return; }
+    block.style.display = "block";
+
+    var tMin = Infinity, tMax = -Infinity, vMin = 0, vMax = 0;
+    curves.forEach(function (c) {
+      c.pts.forEach(function (p) {
+        if (p.t < tMin) tMin = p.t;
+        if (p.t > tMax) tMax = p.t;
+        if (p.v < vMin) vMin = p.v;
+        if (p.v > vMax) vMax = p.v;
+      });
+    });
+    if (tMax <= tMin) { block.style.display = "none"; return; }
+    var pad = (vMax - vMin) * 0.08 || 0.05;
+    var vLo = vMin - pad, vHi = vMax + pad;
+
+    // canvas remplace a chaque rendu : evite d'empiler les ecouteurs
+    // quand on fait des aller-retours entre les onglets 30 jours / Journee
+    var oldCv = document.getElementById("lines");
+    var cv = oldCv.cloneNode(false);
+    oldCv.parentNode.replaceChild(cv, oldCv);
+
+    var dpr = window.devicePixelRatio || 1;
+    var W = cv.parentNode.clientWidth - 16;
+    var H = 200;
+    var padL = 40, padR = 8, padT = 10, padB = 20;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.height = H + "px";
+    var ctx = cv.getContext("2d");
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    function X(t) { return padL + (t - tMin) / (tMax - tMin) * (W - padL - padR); }
+    function Y(v) { return padT + (vHi - v) / (vHi - vLo) * (H - padT - padB); }
+
+    // grille horizontale
+    ctx.font = "9px -apple-system, sans-serif";
+    ctx.textBaseline = "middle";
+    for (var g = 0; g <= 4; g++) {
+      var vv = vLo + (vHi - vLo) * g / 4;
+      var yy = Y(vv);
+      ctx.strokeStyle = "#2a3040";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(W - padR, yy); ctx.stroke();
+      ctx.fillStyle = "#8a91a3";
+      ctx.textAlign = "right";
+      ctx.fillText(vv.toFixed(2).replace(".", ","), padL - 4, yy);
+    }
+
+    // reference zero
+    if (0 > vLo && 0 < vHi) {
+      ctx.strokeStyle = "#5a6379";
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(padL, Y(0)); ctx.lineTo(W - padR, Y(0)); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // axe des dates
+    ctx.fillStyle = "#8a91a3";
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.fillText(fmtDay(tMin), padL, H - 6);
+    ctx.textAlign = "center";
+    ctx.fillText(fmtDay((tMin + tMax) / 2), (padL + W - padR) / 2, H - 6);
+    ctx.textAlign = "right";
+    ctx.fillText(fmtDay(tMax), W - padR, H - 6);
+
+    // courbes
+    ctx.lineWidth = 1.7;
+    ctx.lineJoin = "round";
+    curves.forEach(function (c) {
+      ctx.strokeStyle = c.color;
+      ctx.beginPath();
+      c.pts.forEach(function (p, k) {
+        var x = X(p.t), y = Y(p.v);
+        if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+
+    // legende
+    document.getElementById("linesLegend").innerHTML = curves.map(function (c) {
+      var last = c.pts[c.pts.length - 1].v;
+      return '<span><i style="background:' + c.color + '"></i><b>' + c.name +
+        "</b> " + fmtPct(last) + " pt · " +
+        String(c.weight).replace(".", ",") + " %</span>";
+    }).join("");
+
+    // curseur + infobulle
+    var snapshot = ctx.getImageData(0, 0, cv.width, cv.height);
+
+    function hide() {
+      ctx.putImageData(snapshot, 0, 0);
+      tip.style.display = "none";
+    }
+
+    function move(ev) {
+      var r = cv.getBoundingClientRect();
+      var cx = (ev.touches ? ev.touches[0].clientX : ev.clientX);
+      var cyAbs = (ev.touches ? ev.touches[0].clientY : ev.clientY);
+      var px = cx - r.left;
+      if (px < padL || px > W - padR) { hide(); return; }
+      var t = tMin + (px - padL) / (W - padL - padR) * (tMax - tMin);
+
+      ctx.putImageData(snapshot, 0, 0);
+      var rows = [], tShown = null, tot = 0;
+      curves.forEach(function (c) {
+        var best = null;
+        c.pts.forEach(function (p) {
+          if (!best || Math.abs(p.t - t) < Math.abs(best.t - t)) best = p;
+        });
+        if (!best) return;
+        if (tShown === null) tShown = best.t;
+        tot += best.v;
+        ctx.fillStyle = c.color;
+        ctx.beginPath();
+        ctx.arc(X(best.t), Y(best.v), 3, 0, Math.PI * 2);
+        ctx.fill();
+        rows.push('<span style="color:' + c.color + '">&#9679;</span> ' +
+          (c.name.length > 16 ? c.name.slice(0, 15) + "…" : c.name) +
+          " " + fmtPct(best.v) + " pt");
+      });
+      rows.push("Total 4 : <b>" + fmtPct(tot) + " pt</b>");
+      ctx.strokeStyle = "#8a91a3";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, H - padB); ctx.stroke();
+
+      tip.innerHTML = "<b>" + fmtDay(tShown === null ? t : tShown) + "</b><br>" + rows.join("<br>");
+      tip.style.display = "block";
+      tip.style.left = Math.min(cx + 10, window.innerWidth - 250) + "px";
+      tip.style.top = (cyAbs + 12) + "px";
+      ev.preventDefault();
+    }
+
+    cv.addEventListener("mousemove", move);
+    cv.addEventListener("touchstart", move, { passive: false });
+    cv.addEventListener("touchmove", move, { passive: false });
+    cv.addEventListener("mouseleave", hide);
+    cv.addEventListener("touchend", function () { setTimeout(hide, 1800); });
   }
 
-  function dow(iso) {
-    var p = iso.split('-');
-    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
+  // ===== 30 jours (donnees precalculees par le scraper, inchange) =========
+  function build30j(data) {
+    var ok = data.stocks.filter(function (s) { return s.status === "ok"; });
+    ok.sort(function (a, b) { return Math.abs(b.contrib) - Math.abs(a.contrib); });
+    var top = ok.slice(0, TOP);
+    top.sort(function (a, b) { return b.contrib - a.contrib; });
+    top.forEach(function (s) {
+      s.tip = "<b>" + s.name + "</b><br>" +
+        "Poids : " + String(s.weight).replace(".", ",") + " %<br>" +
+        "Perf 30 j locale : " + fmtPct(s.perf_local * 100) + " %<br>" +
+        "Perf 30 j EUR : " + fmtPct(s.perf_eur * 100) + " %<br>" +
+        "Contribution : " + fmtPct(s.contrib) + " pt<br>" +
+        (s.yahoo || "") + " — " + s.country + " — " + s.sector;
+    });
+
+    var sum = ok.reduce(function (a, s) { return a + s.contrib; }, 0);
+    document.getElementById("subtitle").textContent =
+      "Composition du " + (data.holdings_date || "?") +
+      " — calcul du " + (data.generated || "").slice(0, 10) +
+      " — top " + TOP + " par |contribution|";
+    var kS = document.getElementById("kSum");
+    kS.textContent = fmtPct(sum);
+    kS.className = "v " + (sum >= 0 ? "pos" : "neg");
+    document.getElementById("kCov").textContent =
+      String(data.covered_weight).replace(".", ",") + " %";
+    document.getElementById("kN").textContent = ok.length + "/" + data.stocks.length;
+    document.getElementById("upd").style.display = "none";
+
+    renderBars(top,
+      "Contribution = poids d'indice &times; performance 30 j en EUR (change inclus). " +
+      "Composition proxy : iShares MSCI EM Asia (physique) — l'indice de PAASI " +
+      "(Screened Select ex Thermal Coal) applique des filtres suppl&eacute;mentaires " +
+      "marginaux sur les grandes capitalisations. PAASI &eacute;tant &agrave; " +
+      "r&eacute;plication synth&eacute;tique, Amundi ne publie pas les constituants.",
+      "contribution en points de % d'indice (30 j, EUR)");
+
+    var ser = (data.series || []).slice(0, 4);
+    document.getElementById("linesTitle").textContent =
+      "Contribution cumulée sur 30 jours des " + ser.length +
+      " plus gros contributeurs (points d'indice, EUR)";
+    renderLines(ser);
   }
 
-  // ---------- Chargement des trains (API SNCF, CORS ok) ----------
-  function fetchDirection(origLike, destLike, key, done) {
-    var all = [];
-    function page(offset) {
-      var where = 'origine like "' + origLike + '" AND destination like "' + destLike + '" AND od_happy_card="OUI"';
-      var url = API + '?where=' + encodeURIComponent(where) +
-        '&order_by=date,heure_depart&limit=100&offset=' + offset;
-      fetch(url).then(function (r) { return r.json(); }).then(function (j) {
-        var res = j.results || [];
-        all = all.concat(res);
-        if (res.length === 100 && offset + 100 < 900) {
-          page(offset + 100);
-        } else {
-          trains[key] = all;
-          done();
+  // ===== Journee — variation en direct vs cloture de la veille ==============
+  // Relais perso Cloudflare Worker (meme role que sur mes-actions / telemesure-zone-euro).
+  // Le suffixe /?url= fait partie de la valeur (convention mes-actions).
+  var MON_PROXY = "https://flat-bread-4d06.guermeur-daniel.workers.dev/?url=";
+  var YH_PROXIES = [
+    { u: "https://api.codetabs.com/v1/proxy/?quest=", enc: true },
+    { u: "https://api.allorigins.win/raw?url=",       enc: true }
+  ];
+  var GOOD_PROXY = -1; // index du dernier proxy qui a fonctionne (essaye en premier ensuite)
+
+  function fetchChart(yahooUrl) {
+    var proxies = [];
+    if (MON_PROXY) proxies.push({ u: MON_PROXY, enc: true });
+    YH_PROXIES.forEach(function (p) { proxies.push(p); });
+    var order = [];
+    if (GOOD_PROXY >= 0 && GOOD_PROXY < proxies.length) order.push(GOOD_PROXY);
+    for (var k = 0; k < proxies.length; k++) if (k !== GOOD_PROXY) order.push(k);
+
+    var i = 0;
+    function tryNext() {
+      if (i >= order.length) return Promise.reject(new Error("proxies indisponibles"));
+      var idx = order[i++], p = proxies[idx];
+      var target = p.u + (p.enc ? encodeURIComponent(yahooUrl) : yahooUrl);
+      var ctl = null; try { ctl = new AbortController(); } catch (e) {}
+      var timer = ctl ? setTimeout(function () { ctl.abort(); }, 3000) : 0;
+      return fetch(target, Object.assign({ cache: "no-store" }, ctl ? { signal: ctl.signal } : {}))
+        .then(function (r) {
+          clearTimeout(timer);
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (j) {
+          var res = j && j.chart && j.chart.result && j.chart.result[0];
+          if (!res) throw new Error("payload vide");
+          var m = res.meta || {};
+          var closes = ((res.indicators || {}).quote || [{}])[0].close || [];
+          var last = null;
+          for (var n = closes.length - 1; n >= 0; n--) { if (closes[n] != null) { last = closes[n]; break; } }
+          var price = (m.regularMarketPrice != null) ? m.regularMarketPrice : last;
+          var prev = (m.previousClose != null) ? m.previousClose
+                    : (m.chartPreviousClose != null) ? m.chartPreviousClose : null;
+          if (prev == null) {
+            // repli : avant-derniere cloture de la serie journaliere
+            var vals = closes.filter(function (v) { return v != null; });
+            prev = vals.length > 1 ? vals[vals.length - 2] : null;
+          }
+          if (price == null || prev == null) throw new Error("donnees incompletes");
+          GOOD_PROXY = idx;
+          return { price: price, prev: prev };
+        })
+        .catch(function () { clearTimeout(timer); return tryNext(); });
+    }
+    return tryNext();
+  }
+
+  function yahooChartUrl(symbol) {
+    return "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol + "?range=5d&interval=1d";
+  }
+
+  var JOUR_CACHE = null; // resultat du dernier calcul Journee, pour eviter de tout re-fetcher
+
+  function buildJour(force) {
+    document.getElementById("linesBlock").style.display = "none";
+    if (JOUR_CACHE && !force) { renderJour(JOUR_CACHE); return; }
+    document.getElementById("kpis").style.display = "none";
+    document.getElementById("upd").style.display = "none";
+    document.getElementById("status").style.display = "block";
+    document.getElementById("status").textContent = "Chargement de contributions.json…";
+
+    fetch("contributions.json?t=" + Date.now())
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (data) {
+        var ok = data.stocks.filter(function (s) { return s.status === "ok"; });
+        var currencies = Array.from(new Set(ok.map(function (s) { return s.currency; })))
+          .filter(function (c) { return c && c !== "EUR"; });
+
+        document.getElementById("status").textContent =
+          "Cours en direct : 0/" + (ok.length + currencies.length) + "…";
+        var done = 0, total = ok.length + currencies.length;
+        function tick() {
+          done++;
+          document.getElementById("status").textContent =
+            "Cours en direct : " + done + "/" + total + "…";
         }
-      }).catch(function (e) {
-        $('status').textContent = 'Erreur API SNCF : ' + e.message;
-      });
-    }
-    page(0);
-  }
 
-  function loadTrains() {
-    var pending = 2;
-    function one() { pending -= 1; if (pending === 0) render(); }
-    fetchDirection('PARIS%', 'RENNES', 'PR', one);
-    fetchDirection('RENNES', 'PARIS%', 'RP', one);
-  }
+        var fx = {}; // devise -> {price, prev} = unites de devise pour 1 EUR
+        var fxPromises = currencies.map(function (cur) {
+          return fetchChart(yahooChartUrl("EUR" + cur + "=X"))
+            .then(function (q) { fx[cur] = q; tick(); })
+            .catch(function () { tick(); });
+        });
 
-  // ---------- Rendu ----------
-  function matchRegle(t, dir) {
-    var d = dow(t.date);
-    for (var i = 0; i < config.regles.length; i++) {
-      var r = config.regles[i];
-      var sens = r.sens || 'BOTH';
-      if (sens !== 'BOTH' && sens !== dir) continue;
-      if (r.jour === d && t.heure_depart >= r.debut && t.heure_depart <= r.fin) return true;
-    }
-    return false;
-  }
+        var stocks = [];
+        var stockPromises = ok.map(function (s) {
+          return fetchChart(yahooChartUrl(s.yahoo))
+            .then(function (q) { stocks.push({ s: s, q: q }); tick(); })
+            .catch(function () { tick(); });
+        });
 
-  function render() {
-    var data = trains[direction];
-    var byDate = {};
-    var i, t;
-    for (i = 0; i < data.length; i++) {
-      t = data[i];
-      if (dayFilter.size > 0 && !dayFilter.has(dow(t.date))) continue;
-      if (!byDate[t.date]) byDate[t.date] = [];
-      byDate[t.date].push(t);
-    }
-    var dates = Object.keys(byDate).sort();
-    var html = '';
-    for (i = 0; i < dates.length; i++) {
-      var dts = byDate[dates[i]];
-      html += '<div class="datecard"><div class="datehead"><span>' + esc(dateFR(dates[i])) +
-        '</span><span class="n">' + dts.length + ' train' + (dts.length > 1 ? 's' : '') + '</span></div>';
-      for (var k = 0; k < dts.length; k++) {
-        t = dts[k];
-        var dep = t.heure_depart.slice(0, 5), arr = t.heure_arrivee.slice(0, 5);
-        html += '<div class="train' + (matchRegle(t, direction) ? ' matched' : '') + '">' +
-          '<span class="hours">' + esc(dep) + ' → ' + esc(arr) + '</span>' +
-          '<span class="dur">' + dureeMin(dep, arr) + '</span>' +
-          '<span class="num">' + esc(t.entity || '') + ' ' + esc(t.train_no) + '</span></div>';
-      }
-      html += '</div>';
-    }
-    $('list').innerHTML = html || '<div class="empty">Aucune place MAX réservable sur ces critères pour les 30 prochains jours.</div>';
-    var total = trains.PR.length + trains.RP.length;
-    $('status').textContent = total + ' trains MAX réservables au total (30 jours glissants, MàJ SNCF chaque matin). Trait vert = créneau surveillé.';
-  }
-
-  // ---------- Filtres de jours ----------
-  function buildDayFilters() {
-    var order = [1, 2, 3, 4, 5, 6, 0];
-    var html = '';
-    for (var i = 0; i < order.length; i++) {
-      html += '<span class="daybtn" data-d="' + order[i] + '">' + JOURS[order[i]] + '</span>';
-    }
-    $('dayFilters').innerHTML = html;
-    var btns = document.querySelectorAll('.daybtn');
-    for (var k = 0; k < btns.length; k++) {
-      btns[k].addEventListener('click', function () {
-        var d = parseInt(this.getAttribute('data-d'), 10);
-        if (dayFilter.has(d)) { dayFilter.delete(d); this.classList.remove('on'); }
-        else { dayFilter.add(d); this.classList.add('on'); }
-        render();
-      });
-    }
-  }
-
-  // ---------- Config alertes ----------
-  function ruleRow(r, idx) {
-    var opts = '';
-    var order = [1, 2, 3, 4, 5, 6, 0];
-    for (var i = 0; i < order.length; i++) {
-      opts += '<option value="' + order[i] + '"' + (r.jour === order[i] ? ' selected' : '') + '>' +
-        JOURS_LONG[order[i]] + '</option>';
-    }
-    var sens = r.sens || 'BOTH';
-    var sensOpts =
-      '<option value="PR"' + (sens === 'PR' ? ' selected' : '') + '>Paris → Rennes</option>' +
-      '<option value="RP"' + (sens === 'RP' ? ' selected' : '') + '>Rennes → Paris</option>' +
-      '<option value="BOTH"' + (sens === 'BOTH' ? ' selected' : '') + '>Les deux sens</option>';
-    return '<div class="rule" data-i="' + idx + '">' +
-      '<select class="r-sens">' + sensOpts + '</select>' +
-      '<select class="r-jour">' + opts + '</select>' +
-      '<span>de</span><input type="time" class="r-debut" value="' + esc(r.debut) + '">' +
-      '<span>à</span><input type="time" class="r-fin" value="' + esc(r.fin) + '">' +
-      '<span class="del" title="Supprimer">✕</span></div>';
-  }
-
-  function renderRules() {
-    var html = '';
-    for (var i = 0; i < config.regles.length; i++) html += ruleRow(config.regles[i], i);
-    $('rules').innerHTML = html || '<div class="hint">Aucune règle. Ajoute par exemple « vendredi 16:00–21:00 ».</div>';
-    var dels = document.querySelectorAll('.rule .del');
-    for (var k = 0; k < dels.length; k++) {
-      dels[k].addEventListener('click', function () {
-        var idx = parseInt(this.parentNode.getAttribute('data-i'), 10);
-        readRulesFromDOM();
-        config.regles.splice(idx, 1);
-        renderRules();
-        render();
-      });
-    }
-    var inputs = document.querySelectorAll('.rule select, .rule input');
-    for (var m = 0; m < inputs.length; m++) {
-      inputs[m].addEventListener('change', function () { readRulesFromDOM(); render(); });
-    }
-  }
-
-  function readRulesFromDOM() {
-    var rows = document.querySelectorAll('.rule');
-    var out = [];
-    for (var i = 0; i < rows.length; i++) {
-      out.push({
-        sens: rows[i].querySelector('.r-sens').value,
-        jour: parseInt(rows[i].querySelector('.r-jour').value, 10),
-        debut: rows[i].querySelector('.r-debut').value || '00:00',
-        fin: rows[i].querySelector('.r-fin').value || '23:59'
-      });
-    }
-    config.regles = out;
-  }
-
-  function loadConfig() {
-    var url = 'https://raw.githubusercontent.com/' + REPO_OWNER + '/' + REPO_NAME + '/main/' + CFG_PATH + '?t=' + Date.now();
-    fetch(url).then(function (r) {
-      if (!r.ok) throw new Error('absent');
-      return r.json();
-    }).then(function (j) {
-      config = j;
-      if (!config.regles) config.regles = [];
-      renderRules();
-      render();
-      if (config.modifie_le) {
-        $('cfgmsg').textContent = 'Config actuelle : modifiée par ' + (config.modifie_par || '?') + ' le ' + config.modifie_le;
-      }
-    }).catch(function () {
-      renderRules();
-    });
-  }
-
-  function b64utf8(str) {
-    return btoa(unescape(encodeURIComponent(str)));
-  }
-
-  function saveConfig() {
-    readRulesFromDOM();
-    var token = localStorage.getItem('gh_token_tgvmax');
-    if (!token) {
-      $('tokrow').classList.remove('hidden');
-      $('cfgmsg').textContent = 'Colle ton token GitHub ci-dessus (une seule fois).';
-      return;
-    }
-    config.modifie_par = localStorage.getItem('tgvmax_user') || 'Daniel';
-    config.modifie_le = new Date().toISOString().slice(0, 16).replace('T', ' ');
-    var apiUrl = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + CFG_PATH;
-    $('cfgmsg').textContent = 'Enregistrement…';
-    // 1) récupérer le sha actuel (si le fichier existe)
-    fetch(apiUrl, { headers: { Authorization: 'Bearer ' + token } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        var body = {
-          message: 'MAJ config alertes via dashboard',
-          content: b64utf8(JSON.stringify(config, null, 2))
-        };
-        if (j && j.sha) body.sha = j.sha;
-        return fetch(apiUrl, {
-          method: 'PUT',
-          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
+        return Promise.all(fxPromises.concat(stockPromises)).then(function () {
+          return { data: data, ok: ok, fx: fx, stocks: stocks };
         });
       })
-      .then(function (r) {
-        if (r.ok) {
-          $('cfgmsg').textContent = '✅ Config enregistrée — prise en compte au prochain passage du robot.';
-        } else if (r.status === 401 || r.status === 403) {
-          localStorage.removeItem('gh_token_tgvmax');
-          $('tokrow').classList.remove('hidden');
-          $('cfgmsg').textContent = '❌ Token refusé ou expiré, recolle-le.';
-        } else {
-          $('cfgmsg').textContent = '❌ Erreur GitHub (HTTP ' + r.status + ').';
-        }
+      .then(function (res) {
+        var items = [];
+        res.stocks.forEach(function (o) {
+          var s = o.s, q = o.q;
+          var perfLocal = q.price / q.prev - 1;
+          var perfEur = perfLocal; // devise EUR ou repli si FX indisponible
+          if (s.currency && s.currency !== "EUR") {
+            var r = res.fx[s.currency];
+            if (r && r.price && r.prev) {
+              perfEur = (q.price * r.prev) / (q.prev * r.price) - 1;
+            }
+          }
+          var contrib = s.weight * perfEur;
+          items.push({
+            name: s.name, contrib: contrib, weight: s.weight,
+            tip: "<b>" + s.name + "</b><br>" +
+              "Poids : " + String(s.weight).replace(".", ",") + " %<br>" +
+              "Variation locale (jour) : " + fmtPct(perfLocal * 100) + " %<br>" +
+              "Variation EUR (jour) : " + fmtPct(perfEur * 100) + " %<br>" +
+              "Contribution : " + fmtPct(contrib) + " pt<br>" +
+              (s.yahoo || "") + " — " + s.country + " — " + s.sector
+          });
+        });
+
+        if (!items.length) throw new Error("aucun cours recupere");
+
+        items.sort(function (a, b) { return Math.abs(b.contrib) - Math.abs(a.contrib); });
+        var top = items.slice(0, TOP);
+        top.sort(function (a, b) { return b.contrib - a.contrib; });
+
+        var sumAll = items.reduce(function (a, it) { return a + it.contrib; }, 0);
+        var covWeight = items.reduce(function (a, it) { return a + it.weight; }, 0);
+
+        var cache = {
+          top: top, sumAll: sumAll, covWeight: covWeight,
+          n: items.length, nTotal: res.ok.length, ts: new Date()
+        };
+        JOUR_CACHE = cache;
+        renderJour(cache);
       })
-      .catch(function (e) { $('cfgmsg').textContent = '❌ Erreur réseau : ' + e.message; });
+      .catch(function (e) {
+        document.getElementById("status").textContent =
+          "Erreur cours en direct : " + e.message;
+      });
   }
 
-  // ---------- Événements ----------
-  $('tabPR').addEventListener('click', function () {
-    direction = 'PR';
-    this.classList.add('active'); $('tabRP').classList.remove('active');
-    render();
-  });
-  $('tabRP').addEventListener('click', function () {
-    direction = 'RP';
-    this.classList.add('active'); $('tabPR').classList.remove('active');
-    render();
-  });
-  $('cfgToggle').addEventListener('click', function () {
-    var b = $('cfgBody');
-    b.classList.toggle('hidden');
-    this.textContent = b.classList.contains('hidden') ? 'afficher' : 'masquer';
-  });
-  $('addRule').addEventListener('click', function () {
-    readRulesFromDOM();
-    config.regles.push({ sens: 'PR', jour: 5, debut: '16:00', fin: '21:00' });
-    renderRules();
-    render();
-  });
-  $('saveCfg').addEventListener('click', saveConfig);
-  $('tokSave').addEventListener('click', function () {
-    var v = $('tokInput').value.trim();
-    if (v) {
-      localStorage.setItem('gh_token_tgvmax', v);
-      $('tokrow').classList.add('hidden');
-      saveConfig();
-    }
+  function renderJour(cache) {
+    document.getElementById("subtitle").textContent =
+      "Variation en direct vs clôture de la veille — top " + TOP + " par |contribution|";
+    var kS = document.getElementById("kSum");
+    kS.textContent = fmtPct(cache.sumAll);
+    kS.className = "v " + (cache.sumAll >= 0 ? "pos" : "neg");
+    document.getElementById("kCov").textContent =
+      cache.covWeight.toFixed(1).replace(".", ",") + " %";
+    document.getElementById("kN").textContent = cache.n + "/" + cache.nTotal;
+
+    var updEl = document.getElementById("upd");
+    updEl.style.display = "block";
+    var hh = cache.ts.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    updEl.innerHTML = "maj " + hh + '<button id="jourRefresh">&#8635;</button>';
+    document.getElementById("jourRefresh").addEventListener("click", function () { buildJour(true); });
+
+    renderBars(cache.top,
+      "Variation estimée de l'indice depuis la clôture de la veille, en EUR (change inclus), " +
+      "recalculée en direct à partir des cours actuels des " + cache.nTotal +
+      " principales lignes. Les marchés asiatiques ferment souvent avant l'après-midi en France : " +
+      "hors séance, la variation reflète la dernière clôture disponible.",
+      "contribution en points de % d'indice (jour, EUR)");
+  }
+
+  document.getElementById("modeSeg").addEventListener("click", function (e) {
+    var btn = e.target.closest("button"); if (!btn) return;
+    var mode = btn.getAttribute("data-m");
+    var bs = this.querySelectorAll("button");
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle("on", bs[i] === btn);
+    document.getElementById("status").style.display = "none";
+    if (mode === "30j") { if (COMPDATA) build30j(COMPDATA); }
+    else { buildJour(false); }
   });
 
-  // ---------- Init ----------
-  buildDayFilters();
-  loadConfig();
-  loadTrains();
+  var COMPDATA = null;
+  fetch("contributions.json?t=" + Date.now())
+    .then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function (data) { COMPDATA = data; build30j(data); })
+    .catch(function (e) {
+      document.getElementById("status").textContent =
+        "Erreur de chargement : " + e.message +
+        " — contributions.json pas encore généré ? Lancer le workflow.";
+    });
 })();
 </script>
 </body>
