@@ -5,8 +5,14 @@
       "jour": 0,
       "debut": "16:00",
       "fin": "21:00"
+    },
+    {
+      "sens": "RP",
+      "jour": 0,
+      "debut": "16:00",
+      "fin": "21:00"
     }
   ],
   "modifie_par": "Daniel",
-  "modifie_le": "2026-07-19 11:59"
+  "modifie_le": "2026-07-25 10:34"
 }
