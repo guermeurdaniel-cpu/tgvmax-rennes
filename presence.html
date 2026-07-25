@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>TGV Max — Persistance des trains</title>
+<title>TGV Max — Persistance par jour de semaine</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--txt:#e6edf3;--muted:#8b949e;--acc:#2ea043;--acc2:#58a6ff;--warn:#d29922;}
@@ -15,33 +15,27 @@ h1{font-size:1.15em;margin:6px 0 4px;display:flex;align-items:center;gap:8px;}
 h1 small{color:var(--muted);font-weight:normal;font-size:0.65em;}
 .lead{color:var(--muted);font-size:0.78em;line-height:1.5;margin-bottom:12px;}
 .lead a{color:var(--acc2);}
+.lead b{color:var(--txt);}
 .tabs{display:flex;gap:6px;margin-bottom:8px;}
 .tab{flex:1;padding:9px 6px;background:var(--card);border:1px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-size:0.9em;user-select:none;}
 .tab.active{border-color:var(--acc2);background:#0d2137;color:var(--acc2);font-weight:600;}
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.daybtn{padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:14px;font-size:0.8em;cursor:pointer;color:var(--muted);user-select:none;}
-.daybtn.on{border-color:var(--acc);color:var(--acc);background:#0d2117;}
+.pill{padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:14px;font-size:0.78em;cursor:pointer;color:var(--muted);user-select:none;}
+.pill.on{border-color:var(--acc);color:var(--acc);background:#0d2117;}
 .panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 canvas{display:block;}
-.kpis{display:flex;gap:8px;margin-bottom:12px;}
-.kpi{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
-.kpi .v{font-size:1.05em;font-weight:700;}
-.kpi .l{font-size:0.68em;color:var(--muted);margin-top:2px;line-height:1.3;}
-.scale{display:flex;align-items:center;gap:8px;font-size:0.72em;color:var(--muted);margin-bottom:12px;}
-.scale .grad{flex:1;height:9px;border-radius:5px;}
 #status{color:var(--muted);font-size:0.8em;margin-bottom:10px;}
 .hint{color:var(--muted);font-size:0.75em;line-height:1.55;margin-top:4px;}
 .hint b{color:var(--txt);}
-.tip{position:fixed;display:none;background:#000d;color:#fff;font-size:0.75em;padding:7px 10px;border-radius:8px;pointer-events:none;z-index:9;max-width:250px;line-height:1.5;border:1px solid var(--border);}
+.tip{position:fixed;display:none;background:#000d;color:#fff;font-size:0.75em;padding:7px 10px;border-radius:8px;pointer-events:none;z-index:9;max-width:260px;line-height:1.5;border:1px solid var(--border);}
 </style>
 </head>
 <body>
-<h1>📊 Persistance <small>combien de jours un train reste réservable</small></h1>
+<h1>📊 Persistance <small>par jour de semaine et par horaire</small></h1>
 <div class="lead">
-  Chaque case croise une <b>date de circulation</b> (en colonne) et un <b>horaire de départ</b>
-  (en ligne). Sa valeur est le nombre de relevés quotidiens où ce train est apparu comme
-  réservable en TGV&nbsp;Max. Plus la case est claire, plus le train est resté longtemps
-  disponible — donc plus il est facile à attraper.
+  Chaque case croise un <b>jour de la semaine</b> et un <b>horaire de départ</b>, et porte une
+  moyenne simple en jours, toutes occurrences comptant pareil.
+  <span id="metricNote"></span>
   <a href="index.html">← retour au tableau</a>
 </div>
 
@@ -51,33 +45,22 @@ canvas{display:block;}
 </div>
 
 <div class="filters">
-  <div class="daybtn on" data-mode="exact">Horaire exact</div>
-  <div class="daybtn" data-mode="slot">Par heure</div>
+  <div class="pill on" data-metric="duree">Durée dispo</div>
+  <div class="pill" data-metric="delai">Délai d'ouverture</div>
 </div>
 
 <div id="status">Chargement de historique.jsonl…</div>
 
-<div class="kpis" id="kpis" style="display:none">
-  <div class="kpi"><div class="v" id="kRel">–</div><div class="l">Relevés dans l'historique</div></div>
-  <div class="kpi"><div class="v" id="kTr">–</div><div class="l">Trains distincts</div></div>
-  <div class="kpi"><div class="v" id="kMed">–</div><div class="l">Persistance médiane</div></div>
-</div>
-
 <div class="panel"><canvas id="grid"></canvas></div>
 
-<div class="scale" id="scale" style="display:none">
-  <span>1 jour</span><div class="grad" id="grad"></div><span id="scaleMax">–</span>
-</div>
-
 <div class="hint">
-  <b>Lecture.</b> Une colonne vide signifie qu'aucune place MAX n'a jamais été vue ce
-  jour-là. Un dimanche est souligné en bleu, c'est le jour de ta règle d'alerte.
+  <b>Durée dispo.</b> Nombre de relevés quotidiens pendant lesquels le train est apparu
+  comme réservable.
   <br>
-  <b>Biais à connaître.</b> Le jeu de données SNCF ne couvre que 30 jours glissants, et
-  l'historique local a commencé le premier jour d'exécution du robot. Une date lointaine
-  n'a donc eu que peu d'occasions d'être relevée : son compteur est mécaniquement bas.
-  L'infobulle donne, pour chaque train, le nombre de relevés possibles à côté du nombre
-  de relevés réels — c'est ce rapport qui est comparable d'une date à l'autre.
+  <b>Délai d'ouverture.</b> Écart entre la date de circulation et le jour où le train est
+  devenu réservable alors qu'il ne l'était pas la veille. Un train déjà réservable au
+  premier relevé de l'historique n'a pas de veille : il est exclu de ce calcul, d'où une
+  matrice plus creuse que celle des durées.
 </div>
 
 <div class="tip" id="tip"></div>
@@ -86,34 +69,34 @@ canvas{display:block;}
 (function () {
   "use strict";
 
-  var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-  var INIT = ["D", "L", "M", "M", "J", "V", "S"];
+  // colonnes : lundi -> dimanche (getUTCDay : 0 = dimanche)
+  var COLS = [1, 2, 3, 4, 5, 6, 0];
+  var NOMS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  var COURT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
   var DAY = 86400000;
 
+  // classes de l'histogramme des delais (bornes incluses), en jours avant circulation
+  var BINS = [[0, 1], [2, 3], [4, 6], [7, 11], [12, 20], [21, 29]];
+  var BINS_LBL = ["0-1", "2-3", "4-6", "7-11", "12-20", "21+"];
+
   var dir = "PR";
-  var mode = "exact";
+  var metric = "duree";
   var DATA = null;
   var tip = document.getElementById("tip");
 
   function $(id) { return document.getElementById(id); }
-
   function dayMs(iso) { return Date.parse(iso + "T00:00:00Z"); }
-
-  function isoOf(ms) { return new Date(ms).toISOString().slice(0, 10); }
-
   function dow(ms) { return new Date(ms).getUTCDay(); }
-
-  function frDate(ms) {
+  function isoOf(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  function jjmm(ms) {
     var d = new Date(ms);
-    return JOURS[d.getUTCDay()] + " " +
-      ("0" + d.getUTCDate()).slice(-2) + "/" + ("0" + (d.getUTCMonth() + 1)).slice(-2);
+    return ("0" + d.getUTCDate()).slice(-2) + "/" + ("0" + (d.getUTCMonth() + 1)).slice(-2);
   }
+  function fmt(x, dec) { return x.toFixed(dec === undefined ? 1 : dec).replace(".", ","); }
 
-  // ---- chargement + agregation ------------------------------------------
+  // ---- lecture de l'historique ------------------------------------------
   function parseHistorique(txt) {
-    var seen = {};
-    var snaps = {};
-    var byDir = { PR: {}, RP: {} };
+    var seen = {}, snaps = {}, byDir = { PR: {}, RP: {} };
     txt.split("\n").forEach(function (line) {
       line = line.trim();
       if (!line) return;
@@ -121,87 +104,136 @@ canvas{display:block;}
       try { o = JSON.parse(line); } catch (e) { return; }
       if (!o || !o.snapshot || !o.date || !o.dep) return;
       var uniq = o.snapshot + "|" + o.dir + "|" + o.date + "|" + o.train_no + "|" + o.dep;
-      if (seen[uniq]) return;          // le robot tourne 2x/jour : lignes en double
+      if (seen[uniq]) return;            // le robot tourne 2x/jour : lignes en double
       seen[uniq] = 1;
       snaps[o.snapshot] = 1;
       var d = byDir[o.dir] || (byDir[o.dir] = {});
       var key = o.date + "|" + o.dep.slice(0, 5) + "|" + o.train_no;
       if (!d[key]) {
-        d[key] = { date: o.date, dep: o.dep.slice(0, 5), no: o.train_no, n: 0 };
+        d[key] = { date: o.date, dep: o.dep.slice(0, 5), no: o.train_no,
+                   n: 0, first: o.snapshot };
       }
-      d[key].n += 1;                   // 1 releve unique = 1 jour de presence
+      d[key].n += 1;                     // 1 releve unique = 1 jour de presence
+      if (o.snapshot < d[key].first) d[key].first = o.snapshot;
     });
-    return { snaps: Object.keys(snaps).sort(), byDir: byDir };
+    var liste = Object.keys(snaps).sort();
+    return { snaps: liste, snapSet: snaps, byDir: byDir };
   }
 
-  // nb de releves pendant lesquels ce train POUVAIT etre visible
-  // (dataset SNCF = 30 jours glissants a partir du jour du releve)
-  function exposition(snaps, dateIso) {
+  // nb de releves pendant lesquels cette date POUVAIT etre visible
+  // (jeu de donnees SNCF = 30 jours glissants a partir du jour du releve)
+  function exposition(dateIso) {
     var t = dayMs(dateIso), n = 0;
-    for (var i = 0; i < snaps.length; i++) {
-      var s = dayMs(snaps[i]);
-      if (s <= t && t <= s + 30 * DAY) n += 1;
-    }
+    DATA.snaps.forEach(function (s) {
+      var ms = dayMs(s);
+      if (ms <= t && t <= ms + 30 * DAY) n += 1;
+    });
     return n;
   }
 
-  // ---- construction de la grille ----------------------------------------
-  function buildGrid() {
+  // Delai d'ouverture : ecart entre la date de circulation et le jour ou le train
+  // est devenu reservable alors qu'il ne l'etait pas la veille. Renvoie null si
+  // l'historique ne contient pas de releve la veille (train deja la au demarrage).
+  function delai(t) {
+    var fs = dayMs(t.first);
+    if (!DATA.snapSet[isoOf(fs - DAY)]) return null;
+    return (dayMs(t.date) - fs) / DAY;
+  }
+
+  function histo(vals) {
+    var h = [], i;
+    for (i = 0; i < BINS.length; i++) h.push(0);
+    vals.forEach(function (x) {
+      for (var k = 0; k < BINS.length; k++) {
+        if (x >= BINS[k][0] && x <= BINS[k][1]) { h[k] += 1; return; }
+      }
+      h[BINS.length - 1] += 1;           // au-dela de 29 : derniere classe
+    });
+    return h;
+  }
+
+  // ---- construction du tableau -------------------------------------------
+  function buildTable() {
     var trains = [];
     var map = DATA.byDir[dir] || {};
     for (var k in map) if (map.hasOwnProperty(k)) trains.push(map[k]);
     if (!trains.length) return null;
 
-    var tMin = Infinity, tMax = -Infinity;
-    trains.forEach(function (t) {
-      var ms = dayMs(t.date);
-      if (ms < tMin) tMin = ms;
-      if (ms > tMax) tMax = ms;
-    });
-
-    var cols = [];
-    for (var ms = tMin; ms <= tMax; ms += DAY) cols.push(ms);
-
+    // lignes = horaires (exacts ou tranches)
     var rowKeys = {};
-    trains.forEach(function (t) {
-      rowKeys[mode === "exact" ? t.dep : t.dep.slice(0, 2) + "h"] = 1;
-    });
+    trains.forEach(function (t) { rowKeys[t.dep] = 1; });
     var rows = Object.keys(rowKeys).sort();
+    var rowOf = function (t) { return t.dep; };
 
-    var colIdx = {}, rowIdx = {};
-    cols.forEach(function (m, i) { colIdx[isoOf(m)] = i; });
-    rows.forEach(function (r, i) { rowIdx[r] = i; });
-
-    var cells = [];
+    // dates disponibles par jour de semaine, en ordre chronologique
+    // (passe et futur traites a egalite)
+    var datesOf = {};
+    var vus = {};
     trains.forEach(function (t) {
-      var ci = colIdx[t.date];
-      var ri = rowIdx[mode === "exact" ? t.dep : t.dep.slice(0, 2) + "h"];
-      if (ci === undefined || ri === undefined) return;
-      var key = ci + "," + ri;
-      if (!cells[key]) cells[key] = { n: 0, list: [] };
-      if (t.n > cells[key].n) cells[key].n = t.n;   // le train le plus persistant
-      cells[key].list.push(t);
+      if (vus[t.date]) return;
+      vus[t.date] = 1;
+      var ms = dayMs(t.date);
+      (datesOf[dow(ms)] || (datesOf[dow(ms)] = [])).push(ms);
+    });
+    COLS.forEach(function (d) {
+      if (datesOf[d]) datesOf[d].sort(function (a, b) { return a - b; });
     });
 
-    var max = 1;
-    for (var kk in cells) if (cells.hasOwnProperty(kk)) {
-      if (cells[kk].n > max) max = cells[kk].n;
-    }
-    return { cols: cols, rows: rows, cells: cells, max: max, trains: trains };
+    // index : date|ligne -> [trains]
+    var idx = {};
+    trains.forEach(function (t) {
+      var key = t.date + "|" + rowOf(t);
+      (idx[key] || (idx[key] = [])).push(t);
+    });
+
+    var cells = {}, vMin = Infinity, vMax = -Infinity, nCell = 0;
+    rows.forEach(function (r, ri) {
+      COLS.forEach(function (d, ci) {
+        var liste = datesOf[d] || [];
+        var sv = 0, nb = 0, detail = [], brut = [];
+        liste.forEach(function (ms) {
+          var iso = new Date(ms).toISOString().slice(0, 10);
+          var arr = idx[iso + "|" + r];
+          if (!arr || !arr.length) return;
+          var moy = 0, cpt = 0;
+          arr.forEach(function (t) {
+            var x = metric === "duree" ? t.n : delai(t);
+            if (x === null) return;      // delai non mesurable pour ce train
+            moy += x; cpt += 1;
+            brut.push(x);                // mesures individuelles, pour l'histogramme
+          });
+          if (cpt === 0) return;
+          moy /= cpt;                    // plusieurs trains au meme horaire
+          sv += moy; nb += 1;            // chaque occurrence compte pareil
+          detail.push({ ms: ms, n: moy, nb: cpt, expo: exposition(iso) });
+        });
+        if (nb === 0) return;
+        var v = sv / nb;
+        cells[ci + "," + ri] = { v: v, detail: detail, brut: brut, hist: histo(brut) };
+        nCell += 1;
+        if (v < vMin) vMin = v;
+        if (v > vMax) vMax = v;
+      });
+    });
+    if (!nCell) return null;
+    if (vMax === vMin) vMax = vMin + 1;
+    return { rows: rows, cells: cells, vMin: vMin, vMax: vMax, nCell: nCell };
   }
 
-  function color(n, max) {
-    var a = 0.18 + 0.82 * (n / max);
-    return "rgba(46,160,67," + a.toFixed(3) + ")";
+  // rouge (faible) -> jaune -> vert (eleve)
+  function color(v, lo, hi) {
+    var r = (v - lo) / (hi - lo);
+    if (r < 0) r = 0; if (r > 1) r = 1;
+    return "hsl(" + Math.round(130 * r) + ",62%," + (42 - 4 * r).toFixed(0) + "%)";
   }
 
   // ---- rendu -------------------------------------------------------------
   function render() {
-    var g = buildGrid();
+    var g = buildTable();
     var cv = $("grid");
     if (!g) {
       $("status").style.display = "block";
-      $("status").textContent = "Aucune donnée pour ce sens.";
+      $("status").textContent = "Aucune donnée pour cette combinaison.";
       cv.width = 0; cv.height = 0;
       return;
     }
@@ -213,11 +245,12 @@ canvas{display:block;}
     old.parentNode.replaceChild(cv, old);
 
     var wrap = cv.parentNode;
-    var padL = 42, padT = 26, padB = 6, padR = 4;
+    var padL = 44, padT = 20, padB = 4, padR = 2;
     var avail = wrap.clientWidth - 16 - padL - padR;
-    var cw = Math.max(9, Math.min(24, Math.floor(avail / g.cols.length)));
-    var ch = mode === "exact" ? 15 : 22;
-    var W = padL + g.cols.length * cw + padR;
+    var cw = Math.max(34, Math.floor(avail / COLS.length));
+    var histoOn = (metric === "delai");
+    var ch = histoOn ? 38 : 21;
+    var W = padL + COLS.length * cw + padR;
     var H = padT + g.rows.length * ch + padB;
 
     var dpr = window.devicePixelRatio || 1;
@@ -228,69 +261,70 @@ canvas{display:block;}
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
-    // colonnes dimanche
-    g.cols.forEach(function (ms, i) {
-      if (dow(ms) === 0) {
-        ctx.fillStyle = "rgba(88,166,255,0.10)";
-        ctx.fillRect(padL + i * cw, padT - 14, cw, g.rows.length * ch + 14);
-      }
-    });
-
-    // en-tete : initiale du jour + quantieme
+    // en-tete
     ctx.textBaseline = "middle";
     ctx.textAlign = "center";
-    g.cols.forEach(function (ms, i) {
-      var x = padL + i * cw + cw / 2;
-      ctx.font = "8px -apple-system, sans-serif";
-      ctx.fillStyle = dow(ms) === 0 ? "#58a6ff" : "#8b949e";
-      ctx.fillText(INIT[dow(ms)], x, 8);
-      var d = new Date(ms).getUTCDate();
-      if (cw >= 13 || d === 1 || d % 5 === 0) {
-        ctx.font = "7.5px -apple-system, sans-serif";
-        ctx.fillStyle = "#6e7681";
-        ctx.fillText(String(d), x, 19);
-      }
+    ctx.font = "10px -apple-system, sans-serif";
+    COLS.forEach(function (d, ci) {
+      ctx.fillStyle = d === 0 ? "#58a6ff" : "#8b949e";
+      ctx.fillText(COURT[d], padL + ci * cw + cw / 2, padT / 2 + 1);
     });
 
-    // lignes + cases
-    ctx.textAlign = "right";
+    // cases
     g.rows.forEach(function (r, ri) {
       var y = padT + ri * ch;
-      ctx.font = "9px -apple-system, sans-serif";
+      ctx.font = "9.5px -apple-system, sans-serif";
       ctx.fillStyle = "#8b949e";
+      ctx.textAlign = "right";
       ctx.fillText(r, padL - 5, y + ch / 2);
-      g.cols.forEach(function (ms, ci) {
+      COLS.forEach(function (d, ci) {
         var x = padL + ci * cw;
         var c = g.cells[ci + "," + ri];
         if (!c) {
           ctx.fillStyle = "#1c2129";
-          ctx.fillRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+          ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2);
           return;
         }
-        ctx.fillStyle = color(c.n, g.max);
-        ctx.fillRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
-        if (cw >= 14 && ch >= 14) {
-          ctx.font = "8.5px -apple-system, sans-serif";
-          ctx.fillStyle = c.n / g.max > 0.55 ? "#0d1117" : "#e6edf3";
-          ctx.textAlign = "center";
-          ctx.fillText(String(c.n), x + cw / 2, y + ch / 2);
-          ctx.textAlign = "right";
+        ctx.fillStyle = color(c.v, g.vMin, g.vMax);
+        ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2);
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "center";
+        if (!histoOn) {
+          ctx.font = "bold 10px -apple-system, sans-serif";
+          ctx.fillText(fmt(c.v), x + cw / 2, y + ch / 2);
+        } else {
+          ctx.font = "bold 9.5px -apple-system, sans-serif";
+          ctx.fillText(fmt(c.v), x + cw / 2, y + 9);
+          // mini histogramme : une barre par classe, hauteur normalisee sur la case
+          var hmax = 0;
+          c.hist.forEach(function (n) { if (n > hmax) hmax = n; });
+          if (hmax > 0) {
+            var usable = cw - 8;
+            var bw = usable / BINS.length;
+            var base = y + ch - 4;
+            var hMaxPx = ch - 20;
+            c.hist.forEach(function (n, bi) {
+              if (!n) return;
+              var bh = Math.max(1.5, hMaxPx * n / hmax);
+              ctx.fillStyle = "rgba(255,255,255,0.82)";
+              ctx.fillRect(x + 4 + bi * bw, base - bh, Math.max(1.5, bw - 1.2), bh);
+            });
+            ctx.strokeStyle = "rgba(255,255,255,0.35)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x + 4, base + 0.5);
+            ctx.lineTo(x + 4 + usable, base + 0.5);
+            ctx.stroke();
+          }
         }
       });
     });
 
-    // KPI
-    var ns = g.trains.map(function (t) { return t.n; }).sort(function (a, b) { return a - b; });
-    var med = ns.length % 2 ? ns[(ns.length - 1) / 2]
-      : (ns[ns.length / 2 - 1] + ns[ns.length / 2]) / 2;
-    $("kpis").style.display = "flex";
-    $("kRel").textContent = DATA.snaps.length;
-    $("kTr").textContent = g.trains.length;
-    $("kMed").textContent = String(med).replace(".", ",") + " j";
-    $("scale").style.display = "flex";
-    $("scaleMax").textContent = g.max + " jours";
-    $("grad").style.background =
-      "linear-gradient(90deg," + color(1, g.max) + "," + color(g.max, g.max) + ")";
+    $("metricNote").innerHTML = metric === "duree"
+      ? "Ici, la <b>durée pendant laquelle le train reste réservable</b>. " +
+        "<b>Rouge = part vite, vert = reste disponible.</b>"
+      : "Ici, le <b>délai entre l'ouverture à la réservation et la circulation</b>. " +
+        "<b>Rouge = ouvre au dernier moment, vert = ouvre longtemps à l'avance.</b>";
 
     // infobulle
     function show(ev) {
@@ -299,26 +333,37 @@ canvas{display:block;}
       var cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
       var ci = Math.floor((cx - r.left - padL) / cw);
       var ri = Math.floor((cy - r.top - padT) / ch);
-      if (ci < 0 || ci >= g.cols.length || ri < 0 || ri >= g.rows.length) {
+      if (ci < 0 || ci >= COLS.length || ri < 0 || ri >= g.rows.length) {
         tip.style.display = "none"; return;
       }
-      var ms = g.cols[ci];
       var c = g.cells[ci + "," + ri];
-      var html = "<b>" + frDate(ms) + "</b> — " + g.rows[ri] + "<br>";
+      var html = "<b>" + NOMS[COLS[ci]] + " " + g.rows[ri] + "</b><br>";
       if (!c) {
-        html += "aucune place MAX vue";
+        html += "aucune place MAX observée";
       } else {
-        var expo = exposition(DATA.snaps, isoOf(ms));
-        c.list.sort(function (a, b) { return b.n - a.n; });
-        c.list.forEach(function (t) {
-          html += t.dep + " n°" + t.no + " — <b>" + t.n + "</b> relevé" +
-            (t.n > 1 ? "s" : "") + " sur " + expo + "<br>";
+        html += (metric === "duree" ? "durée moyenne : " : "délai moyen : ") +
+          "<b>" + fmt(c.v) + " j</b> sur " + c.detail.length +
+          " occurrence" + (c.detail.length > 1 ? "s" : "") + "<br>";
+        if (metric === "delai") {
+          var parts = [];
+          c.hist.forEach(function (n, bi) {
+            if (n) parts.push("J-" + BINS_LBL[bi] + " : " + n);
+          });
+          if (parts.length) html += "<i>" + parts.join(" · ") + "</i><br>";
+        }
+        c.detail.forEach(function (o) {
+          html += jjmm(o.ms) + " — " + fmt(o.n) + " j" +
+            (o.nb > 1 ? " (" + o.nb + " trains)" : "") +
+            (metric === "duree"
+              ? " · " + o.expo + " relevé" + (o.expo > 1 ? "s" : "") + " possible" +
+                (o.expo > 1 ? "s" : "")
+              : "") + "<br>";
         });
       }
       tip.innerHTML = html;
       tip.style.display = "block";
-      tip.style.left = Math.min(cx + 12, window.innerWidth - 260) + "px";
-      tip.style.top = Math.min(cy + 14, window.innerHeight - 110) + "px";
+      tip.style.left = Math.min(cx + 12, window.innerWidth - 270) + "px";
+      tip.style.top = Math.min(cy + 14, window.innerHeight - 130) + "px";
       if (ev.cancelable) ev.preventDefault();
     }
     cv.addEventListener("mousemove", show);
@@ -331,29 +376,25 @@ canvas{display:block;}
   }
 
   // ---- interactions ------------------------------------------------------
-  var tabs = document.querySelectorAll(".tab");
-  for (var i = 0; i < tabs.length; i++) {
-    tabs[i].addEventListener("click", function () {
-      for (var k = 0; k < tabs.length; k++) tabs[k].classList.toggle("active", tabs[k] === this);
-      dir = this.getAttribute("data-dir");
-      if (DATA) render();
-    });
+  function groupe(sel, attr, set) {
+    var els = document.querySelectorAll(sel);
+    for (var i = 0; i < els.length; i++) {
+      els[i].addEventListener("click", function () {
+        for (var k = 0; k < els.length; k++) {
+          els[k].classList.toggle(attr === "data-dir" ? "active" : "on", els[k] === this);
+        }
+        set(this.getAttribute(attr));
+        if (DATA) render();
+      });
+    }
   }
-  var modes = document.querySelectorAll(".daybtn");
-  for (var j = 0; j < modes.length; j++) {
-    modes[j].addEventListener("click", function () {
-      for (var k = 0; k < modes.length; k++) modes[k].classList.toggle("on", modes[k] === this);
-      mode = this.getAttribute("data-mode");
-      if (DATA) render();
-    });
-  }
+  groupe(".tab", "data-dir", function (v) { dir = v; });
+  groupe("[data-metric]", "data-metric", function (v) { metric = v; });
 
   fetch("historique.jsonl?t=" + Date.now())
     .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
     .then(function (txt) { DATA = parseHistorique(txt); render(); })
-    .catch(function (e) {
-      $("status").textContent = "Erreur de chargement : " + e.message;
-    });
+    .catch(function (e) { $("status").textContent = "Erreur de chargement : " + e.message; });
 })();
 </script>
 </body>
